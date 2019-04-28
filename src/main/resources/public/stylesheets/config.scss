@@ -1,0 +1,79 @@
+// Default theme
+$primary-color: #3498db;
+$primary-light-color: #bedef4;
+$primary-dark-color: #2980b9;
+$primary-color-text: #FFFFFF;
+$toolbar-hover: rgba(0, 0, 0, .1);
+
+$uml-border: rgba(0,0,0,.3);
+$uml-color: linear-gradient(to bottom, #fffbd9 0%, #fff7c4 100%);
+$uml-text: #111;
+
+$primary-background: #FFFFFF;
+$secondary-background: #F5F5F5;
+$tertiary-background: #E5E5E5;
+$text-color: #111;
+$border-color: #BDBDBD;
+$border-color-light: #DDDDDD;
+$main-hover: rgba(0, 0, 0, .05);
+
+$error-primary: #F44336;
+$error-text: #FFFFFF;
+$error-secondary: #FFEBEE;
+
+$alert-primary: #FFEB3B;
+$alert-text: #FFFFFF;
+
+$dialog-background: #F9F9F9;
+$dialog-text: $text-color;
+$dialog-button: $secondary-background;
+
+// Custom themes
+$theme: "light" !default;
+
+// Dark theme
+@if $theme == "dark" {
+  $toolbar-color: #0d4699;
+  $toolbar-text: #FFFFFF;
+  $toolbar-hover: rgba(255, 255, 255, .1);
+
+  $uml-border: #ddd;
+  $uml-color: #455A64;
+  $uml-text: #fff;
+
+  $primary-background: #333;
+  $secondary-background: #444;
+  $text-color: #fff;
+  $border-color: #BDBDBD;
+  $main-hover: rgba(255, 255, 255, .1);
+
+  $error-primary: #F44336;
+  $error-secondary: #6a1212;
+
+  $dialog-background: #3D3D3D;
+  $dialog-text: $text-color;
+  $dialog-button: $secondary-background;
+}
+
+$icon-color: rgba($text-color, 0.54);
+$icon-color-focus: rgba($text-color, 0.87);
+$icon-color-inactive: rgba($text-color, 0.15);
+
+// Common
+$input-border-size: 1px;
+$menu-bar-height: 2.2rem;
+$tab-bar-height: 2.2rem;
+$toolbar-height: 2.8rem;
+$top-height: $menu-bar-height + $toolbar-height;
+$sidebar-width: 16rem;
+$border-radius: 0.2rem;
+
+$animationTime: 200ms;
+
+@mixin no-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

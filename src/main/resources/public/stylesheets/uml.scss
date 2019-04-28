@@ -1,0 +1,275 @@
+@import "config";
+
+.absolute-view {
+  display: inline-block;
+  position: absolute;
+  z-index: 1;
+  //box-shadow: 0 1px 4px rgba(0, 0, 0, .14);
+
+  width: intrinsic;
+  width: -moz-max-content;
+  width: -webkit-max-content;
+  width: max-content;
+
+  & > :not(.resize-handler) {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+  }
+}
+
+.notch {
+  float: left;
+  position: relative;
+
+  &:before {
+    background: inherit;
+  }
+}
+
+.border-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%
+}
+
+.border-view {
+  display: inline-block;
+  position: absolute;
+  z-index: 1;
+  //overflow: hidden;
+
+  width: intrinsic;
+  width: -moz-max-content;
+  width: -webkit-max-content;
+  width: max-content;
+
+  @include no-select();
+}
+
+.content-view {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.icon-shape {
+  display: block;
+}
+
+.resize-handler {
+  position: absolute;
+  width: 0.5rem;
+  height: 0.5rem;
+  display: block;
+  bottom: 0;
+  right: 0;
+  z-index: 2;
+  cursor: nwse-resize;
+
+  border-style: solid;
+  border-color: transparent rgba($text-color, 0.3) rgba($text-color, 0.3) transparent;
+  border-width: 0.4rem;
+
+  &:hover {
+    background: rgba($text-color, 0.8);
+  }
+}
+
+.navigation-view {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background-color: $primary-background;
+
+  * {
+    font-family: "RobotoMono Nerd Font", Roboto, Arial, sans-serif;
+  }
+
+  & > div {
+    min-width: 100%;
+    min-height: 100%;
+
+    & > div {
+      position: relative;
+    }
+  }
+
+  .select-box {
+    background: rgba($uml-text, 0.2);
+    border: solid 2px $primary-color;
+    position: absolute;
+    z-index: 2;
+  }
+
+  & > canvas {
+    position: absolute;
+  }
+
+  input {
+    margin: 0;
+    padding: 0.1rem;
+    border-color: transparent;
+    background: transparent;
+    display: block;
+    color: $uml-text;
+    width: 100%;
+
+    &:focus {
+      background: $primary-background;
+      color: $text-color;
+      border-color: $primary-color;
+    }
+  }
+}
+
+.selected-view, .highlighted-view {
+  & > .content-view, & > .icon-shape {
+    outline: solid 2px $primary-color;
+  }
+}
+
+.snap-view {
+  & > .content-view, &.icon-view {
+    outline: solid 2px #FFC107;
+
+    &:after {
+      content: '';
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+
+      background: rgba(#FFC107, 0.2);
+      display: block;
+      position: absolute;
+      z-index: 5;
+    }
+  }
+}
+
+.drop-target {
+  outline: solid 2px $primary-color;
+  z-index: 2;
+
+  &:after {
+    content: '';
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background: rgba($primary-color, 0.2);
+    display: block;
+    position: absolute;
+    z-index: 5;
+  }
+}
+
+.html-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+
+  width: intrinsic;
+  width: -moz-max-content;
+  width: -webkit-max-content;
+  width: max-content;
+
+  z-index: 2;
+
+  input {
+    background-color: rgba($primary-background, .6);
+    text-align: center;
+
+    &:hover, &:focus {
+      padding: .5rem;
+      background-color: rgba($primary-background, .9);
+      border: 2px solid $border-color;
+      border-radius: $border-radius;
+    }
+
+    &:placeholder-shown {
+      background: transparent;
+    }
+  }
+}
+
+.jtk-connector {
+  z-index: 1;
+
+  &.jtk-dragging {
+    z-index: 2;
+  }
+}
+
+.jtk-endpoint {
+  visibility: hidden;
+}
+
+.connection-source {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 2rem;
+  height: 2rem;
+  background-color: $primary-background;
+  text-align: center;
+  line-height: 2rem;
+  margin: 0.5rem 0.5rem 0.5rem 0;
+  padding-left: 0.5rem;
+  font-size: 1.4rem;
+  display: none;
+
+  @include no-select()
+}
+
+*:hover > .connection-source {
+  display: block;
+}
+
+.absolute-view:hover > div > .connection-source {
+  display: block;
+}
+
+.target-disabled {
+  background: #AAA !important;
+}
+
+.double-border {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    display: block;
+    top: 3px;
+    left: 3px;
+    bottom: 3px;
+    right: 3px;
+    border: inherit;
+    border-radius: inherit;
+  }
+}
+
+.left-double-border::after {
+  content: '';
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 5px;
+  bottom: 0;
+  border: inherit;
+  border-width: 0 0 0 1px;
+}
+
+.horizontal-view {
+  position: relative;
+
+  & > *:first-child {
+    position: absolute;
+    margin-left: -30px;
+  }
+}
