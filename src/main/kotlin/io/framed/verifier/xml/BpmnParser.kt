@@ -1,21 +1,22 @@
 package io.framed.verifier.xml
 
-import io.framed.verifier.bpmn.Process
+import io.framed.verifier.bpmn.BpmnModel
+import io.framed.verifier.bpmn.BpmnProcess
 import org.w3c.dom.Element
 import org.w3c.dom.parsing.DOMParser
 
 
 object BpmnParser {
 
-    fun parse(content: String): Process? {
+    fun parse(content: String): BpmnModel? {
         val parser = DOMParser()
         val doc = parser.parseFromString(content, "text/xml")
 
-        val node = doc.getElementsByTagName("bpmn:process").let {
+        val node = doc.getElementsByTagName("bpmn:definitions").let {
             if (it.length > 0) it.item(0) else null
         } ?: return null
 
-        return Process.parse(parse(node))
+        return BpmnModel.parse(parse(node))
     }
 
     private fun parse(element: Element): XmlElement {

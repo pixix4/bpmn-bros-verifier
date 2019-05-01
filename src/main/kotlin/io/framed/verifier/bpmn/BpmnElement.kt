@@ -1,7 +1,8 @@
 package io.framed.verifier.bpmn
 
-abstract class BpmnElement(
+interface BpmnElement {
     val id: String
-) {
-    open fun build(process: Process) {}
+    fun build(model: BpmnModel) {}
+
+    fun log(expand: Boolean = true): String = this::class.simpleName ?: "UnknownElement"
 }

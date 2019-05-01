@@ -18,7 +18,7 @@ class Event() : ModelElement<Event>() {
      */
     var type: EventType = EventType.STANDARD
     /**
-     * Description of the Event
+     * Description of the BpmnEvent
      */
     var desc: String = ""
 

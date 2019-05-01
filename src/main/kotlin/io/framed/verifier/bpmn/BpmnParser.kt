@@ -26,7 +26,7 @@ abstract class BpmnParser<T : BpmnElement>(
                 if (parser.canParse(xml)) return parser.parse(xml)
             }
 
-            throw IllegalArgumentException()
+            throw IllegalArgumentException("Cannot parse ${xml.tagName}")
         }
     }
 }
