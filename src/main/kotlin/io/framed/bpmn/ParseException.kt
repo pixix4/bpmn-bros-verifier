@@ -1,4 +1,4 @@
-package io.framed.verifier
+package io.framed.bpmn
 
 class ParseException(message: String?, cause: Throwable?) : RuntimeException(message, cause) {
     constructor() : this(null, null)

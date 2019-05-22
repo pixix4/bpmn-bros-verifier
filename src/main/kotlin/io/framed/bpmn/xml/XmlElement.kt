@@ -1,4 +1,4 @@
-package io.framed.verifier.xml
+package io.framed.bpmn.xml
 
 interface XmlElement {
     val tagName: String

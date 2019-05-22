@@ -1,6 +1,6 @@
-package io.framed.verifier.bpmn
+package io.framed.bpmn.model
 
-import io.framed.verifier.xml.XmlElement
+import io.framed.bpmn.xml.XmlElement
 
 class BpmnTask(
     override val id: String
@@ -8,7 +8,11 @@ class BpmnTask(
 
     var name: String = ""
 
-    companion object : BpmnParser<BpmnTask>(".*[Tt]ask".toRegex()) {
+    override fun stringify(): String {
+        return super.stringify() + "($name)"
+    }
+
+    companion object : BpmnParser<BpmnTask>("(.*[Tt]ask|subProcess)".toRegex()) {
         override fun parse(xml: XmlElement): BpmnTask {
             if (!canParse(xml)) throw IllegalArgumentException("Cannot parse BpmnTask")
 

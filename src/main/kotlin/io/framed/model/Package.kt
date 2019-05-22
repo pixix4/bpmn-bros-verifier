@@ -22,7 +22,11 @@ class Package() : ModelElementMetadata<Package>() {
     var name: String = "UnnamedPackage"
 
     @Serializable(with = PolymorphicSetSerializer::class)
-    var children: Set<ModelElement<*>> = emptySet()
+    override var children: Set<ModelElement<*>> = emptySet()
+
+    override fun getAllChildren(): List<ModelElement<*>> {
+        return super.getAllChildren() + children.flatMap { it.getAllChildren() }
+    }
 
     override fun maxId(): Long = listOf(
             id,

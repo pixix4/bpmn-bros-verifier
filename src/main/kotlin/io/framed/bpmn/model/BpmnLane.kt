@@ -1,6 +1,6 @@
-package io.framed.verifier.bpmn
+package io.framed.bpmn.model
 
-import io.framed.verifier.xml.XmlElement
+import io.framed.bpmn.xml.XmlElement
 
 class BpmnLane(
         override val id: String
@@ -18,6 +18,10 @@ class BpmnLane(
                 content += element
             }
         }
+    }
+
+    override fun stringify(): String {
+        return super.stringify() + "($name)"
     }
 
     companion object : BpmnParser<BpmnLane>("lane".toRegex()) {

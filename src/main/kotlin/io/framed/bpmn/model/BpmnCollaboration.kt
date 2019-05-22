@@ -1,6 +1,6 @@
-package io.framed.verifier.bpmn
+package io.framed.bpmn.model
 
-import io.framed.verifier.xml.XmlElement
+import io.framed.bpmn.xml.XmlElement
 
 class BpmnCollaboration(
         override val id: String

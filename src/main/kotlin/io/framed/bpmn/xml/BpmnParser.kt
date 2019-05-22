@@ -1,7 +1,6 @@
-package io.framed.verifier.xml
+package io.framed.bpmn.xml
 
-import io.framed.verifier.bpmn.BpmnModel
-import io.framed.verifier.bpmn.BpmnProcess
+import io.framed.bpmn.model.BpmnModel
 import org.w3c.dom.Element
 import org.w3c.dom.parsing.DOMParser
 

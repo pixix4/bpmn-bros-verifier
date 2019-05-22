@@ -1,6 +1,6 @@
-package io.framed.verifier.bpmn
+package io.framed.bpmn.model
 
-import io.framed.verifier.xml.XmlElement
+import io.framed.bpmn.xml.XmlElement
 
 class BpmnEvent(
     override val id: String,
@@ -26,8 +26,8 @@ class BpmnEvent(
         }
     }
 
-    override fun log(expand: Boolean): String {
-        return super.log() + "($type)"
+    override fun stringify(): String {
+        return super.stringify() + "($name: $type)"
     }
 
     enum class Type {

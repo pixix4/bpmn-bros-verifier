@@ -32,6 +32,10 @@ class Method() : ModelElement<Method>() {
     @Serializable(with = PolymorphicListSerializer::class)
     var parameters: List<Parameter> = emptyList()
 
+    override fun getAllChildren(): List<ModelElement<*>> {
+        return super.getAllChildren() + parameters.flatMap { it.getAllChildren() }
+    }
+
     override fun maxId(): Long = listOf(
             id,
             parameters.map { it.maxId() }.max() ?: 0

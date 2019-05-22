@@ -1,6 +1,6 @@
-package io.framed.verifier.bpmn
+package io.framed.bpmn.model
 
-import io.framed.verifier.xml.XmlElement
+import io.framed.bpmn.xml.XmlElement
 
 class BpmnParticipant(
     override val id: String
@@ -15,6 +15,10 @@ class BpmnParticipant(
         model.find<BpmnProcess>(processRef)?.let {
             process = it
         }
+    }
+
+    override fun stringify(): String {
+        return super.stringify() + "($name)"
     }
 
     override fun log(expand: Boolean): String {

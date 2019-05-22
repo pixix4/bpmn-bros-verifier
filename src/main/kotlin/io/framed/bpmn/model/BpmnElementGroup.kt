@@ -1,4 +1,4 @@
-package io.framed.verifier.bpmn
+package io.framed.bpmn.model
 
 interface BpmnElementGroup : BpmnElement {
 
@@ -39,3 +39,21 @@ interface BpmnElementGroup : BpmnElement {
 
 @Suppress("EXTENSION_SHADOWED_BY_MEMBER")
 inline fun <reified T : BpmnElement> BpmnElementGroup.find(id: String): T? = find(id) as? T
+
+fun BpmnElementGroup.transitiveChildren(): List<BpmnElement> {
+    val stack = mutableListOf(this)
+    val result = mutableListOf<BpmnElement>(this)
+
+    while (stack.isNotEmpty()) {
+        val top = stack.removeAt(0)
+
+        for (element in top.content) {
+            result += element
+            if (element is BpmnElementGroup) {
+                stack += element
+            }
+        }
+    }
+
+    return result
+}

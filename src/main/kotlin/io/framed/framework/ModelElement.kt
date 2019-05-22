@@ -13,7 +13,7 @@ abstract class ModelElement<M : ModelElement<M>> {
     val id: Long = lastId ++
 
     abstract fun copy(): M
-    open fun getChildren(): List<ModelElement<*>> = listOf(this)
+    open fun getAllChildren(): List<ModelElement<*>> = listOf(this)
     open fun maxId(): Long = id
 
     companion object {

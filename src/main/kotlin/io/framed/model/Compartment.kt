@@ -3,6 +3,7 @@ package io.framed.model
 import io.framed.PolymorphicListSerializer
 import io.framed.PolymorphicSetSerializer
 import io.framed.framework.ModelElement
+import io.framed.framework.ModelElementGroup
 import kotlinx.serialization.Serializable
 
 /**
@@ -11,7 +12,7 @@ import kotlinx.serialization.Serializable
  * @author Sebastian
  */
 @Serializable
-class Compartment() : ModelElement<Compartment>() {
+class Compartment() : ModelElementGroup<Compartment>() {
 
     constructor(init: (Compartment) -> Unit) : this() {
         init(this)
@@ -36,14 +37,18 @@ class Compartment() : ModelElement<Compartment>() {
 
 
     @Serializable(with = PolymorphicSetSerializer::class)
-    var children: Set<ModelElement<*>> = emptySet()
+    override var children: Set<ModelElement<*>> = emptySet()
+
+    override fun getAllChildren(): List<ModelElement<*>> {
+        return super.getAllChildren() + children.flatMap { it.getAllChildren() } + attributes.flatMap { it.getAllChildren() } + methods.flatMap { it.getAllChildren() }
+    }
 
     override fun maxId(): Long = listOf(
             id,
             attributes.map { it.maxId() }.max() ?: 0,
             methods.map { it.maxId() }.max() ?: 0,
             children.map { it.maxId() }.max() ?: 0
-            ).max() ?: id
+    ).max() ?: id
 
     override fun copy() = Compartment { new ->
         new.name = name

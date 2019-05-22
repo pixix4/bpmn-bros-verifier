@@ -3,13 +3,14 @@ package io.framed.model
 import io.framed.PolymorphicListSerializer
 import io.framed.PolymorphicSetSerializer
 import io.framed.framework.ModelElement
+import io.framed.framework.ModelElementGroup
 import kotlinx.serialization.Serializable
 
 /**
  * Model class for a bros scene.
  */
 @Serializable
-class Scene() : ModelElement<Scene>() {
+class Scene() : ModelElementGroup<Scene>() {
 
     constructor(init: (Scene) -> Unit) : this() {
         init(this)
@@ -28,13 +29,17 @@ class Scene() : ModelElement<Scene>() {
 
 
     @Serializable(with = PolymorphicSetSerializer::class)
-    var children: Set<ModelElement<*>> = emptySet()
+    override var children: Set<ModelElement<*>> = emptySet()
+
+    override fun getAllChildren(): List<ModelElement<*>> {
+        return super.getAllChildren() + children.flatMap { it.getAllChildren() } + attributes.flatMap { it.getAllChildren() }
+    }
 
     override fun maxId(): Long = listOf(
             id,
             attributes.map { it.maxId() }.max() ?: 0,
             children.map { it.maxId() }.max() ?: 0
-            ).max() ?: id
+    ).max() ?: id
 
     override fun copy() = Scene { new ->
         new.name = name

@@ -1,6 +1,7 @@
 package io.framed.model
 
 import io.framed.framework.ModelElement
+import io.framed.framework.ModelElementGroup
 import kotlinx.serialization.Serializable
 
 /**
@@ -9,6 +10,6 @@ import kotlinx.serialization.Serializable
  * @author lars
  */
 @Serializable
-abstract class ModelElementMetadata<M : ModelElementMetadata<M>> : ModelElement<M>() {
+abstract class ModelElementMetadata<M : ModelElementMetadata<M>> : ModelElementGroup<M>() {
     val metadata: Metadata = Metadata()
 }
