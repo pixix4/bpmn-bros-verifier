@@ -9,6 +9,7 @@ import io.framed.framework.util.loadAjaxFile
 import io.framed.model.*
 import io.framed.modules.LaneVerifier
 import io.framed.modules.ParticipantVerifier
+import io.framed.modules.TerminationEventVerifier
 import io.framed.verifier.ModelTree
 import io.framed.verifier.TreeVerifier
 import io.framed.verifier.match
@@ -90,6 +91,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel) {
 
     verifier.register(LaneVerifier())
     verifier.register(ParticipantVerifier())
+    verifier.register(TerminationEventVerifier())
 
     val errors = verifier.verify()
 

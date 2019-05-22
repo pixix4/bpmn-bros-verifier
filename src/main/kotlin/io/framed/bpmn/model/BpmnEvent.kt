@@ -3,11 +3,13 @@ package io.framed.bpmn.model
 import io.framed.bpmn.xml.XmlElement
 
 class BpmnEvent(
-    override val id: String,
-    val type: Type
+        override val id: String,
+        val type: Type,
+        val terminationEvent: Boolean
 ) : BpmnElement {
 
     var name: String = ""
+
 
     companion object : BpmnParser<BpmnEvent>(".*[Ee]vent".toRegex()) {
         override fun parse(xml: XmlElement): BpmnEvent {
@@ -19,7 +21,9 @@ class BpmnEvent(
                 else -> Type.UNKNOWN
             }
 
-            val bpmn = BpmnEvent(xml["id"], type)
+            val terminationEvent = xml.children.find { it.tagName == "bpmn:terminateEventDefinition" } != null
+
+            val bpmn = BpmnEvent(xml["id"], type, terminationEvent)
             bpmn.name = xml["name"]
 
             return bpmn
