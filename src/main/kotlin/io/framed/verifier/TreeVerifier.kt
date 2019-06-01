@@ -237,4 +237,15 @@ class TreeVerifier(
         return executorList.flatMap { it.getErrors() }
     }
 
+    fun log() {
+        for (executor in executorList) {
+            val verifier = executor.verifier
+
+            val name = verifier::class.simpleName ?: "UnknownVerifier"
+            val log = verifier.consumeLog()
+
+            console.log("--- $name ---")
+            console.log(log.toTypedArray())
+        }
+    }
 }

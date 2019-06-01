@@ -10,7 +10,6 @@ class BpmnEvent(
 
     var name: String = ""
 
-
     companion object : BpmnParser<BpmnEvent>(".*[Ee]vent".toRegex()) {
         override fun parse(xml: XmlElement): BpmnEvent {
             if (!canParse(xml)) throw IllegalArgumentException("Cannot parse BpmnEvent")

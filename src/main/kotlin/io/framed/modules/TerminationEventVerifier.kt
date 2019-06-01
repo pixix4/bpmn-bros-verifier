@@ -6,7 +6,7 @@ import io.framed.framework.ModelElement
 import io.framed.model.ReturnEvent
 import io.framed.verifier.*
 
-class TerminationEventVerifier() : Verifier {
+class TerminationEventVerifier() : Verifier() {
 
     override val modifier = Modifier.ALL
 
@@ -21,7 +21,7 @@ class TerminationEventVerifier() : Verifier {
         val nameMatch = match(bpmnEvent.name, returnEvent.desc)
 
         return if (nameMatch) {
-            println("Termination event '${bpmnEvent.name}' matches return event '${returnEvent.desc}'")
+            log("Termination event '${bpmnEvent.name}' matches return event '${returnEvent.desc}'")
             Result.Valid
         } else {
             Result.Error("Error while checking ${bpmnEvent.name}")

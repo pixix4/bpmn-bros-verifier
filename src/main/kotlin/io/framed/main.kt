@@ -3,13 +3,15 @@ package io.framed
 import io.framed.bpmn.ParseException
 import io.framed.bpmn.model.*
 import io.framed.bpmn.xml.BpmnParser
+import io.framed.framework.ModelConnection
 import io.framed.framework.ModelElement
 import io.framed.framework.ModelElementGroup
 import io.framed.framework.util.loadAjaxFile
 import io.framed.model.*
+import io.framed.modules.EndEventVerifier
 import io.framed.modules.LaneVerifier
-import io.framed.modules.ParticipantVerifier
 import io.framed.modules.TerminationEventVerifier
+import io.framed.verifier.ModelRelation
 import io.framed.verifier.ModelTree
 import io.framed.verifier.TreeVerifier
 import io.framed.verifier.match
@@ -44,14 +46,14 @@ fun init() {
 
     loadAjaxFile("restaurant.bpmn") {
         bpmn = BpmnParser.parse(it) ?: throw ParseException("model")
-        //console.log(bpmn?.log())
+        console.log(bpmn?.log())
         check()
     }
 }
 
-fun generateBpmnTree(element: BpmnElement): ModelTree<BpmnElement> {
+fun generateBpmnTree(connections: List<ModelRelation<BpmnFlow>>, element: BpmnElement): ModelTree<BpmnElement> {
     val children = if (element is BpmnElementGroup) {
-        element.content.map(::generateBpmnTree)
+        element.content.filter { it !is BpmnFlow }.map { generateBpmnTree(connections, it) }
     } else emptyList()
 
     val tree = ModelTree(
@@ -62,13 +64,23 @@ fun generateBpmnTree(element: BpmnElement): ModelTree<BpmnElement> {
     )
 
     tree.children.forEach { it.parent = tree }
+
+    for (connection in connections) {
+        if (element.id == connection.relation.sourceRef) {
+            tree.relations += connection
+            connection.target = tree
+        } else if (element.id == connection.relation.targetRef) {
+            tree.relations += connection
+            connection.source = tree
+        }
+    }
 
     return tree
 }
 
-fun generateBrosTree(element: ModelElement<*>): ModelTree<ModelElement<*>> {
+fun generateBrosTree(connections: List<ModelRelation<ModelConnection<*>>>, element: ModelElement<*>): ModelTree<ModelElement<*>> {
     val children = if (element is ModelElementGroup<*>) {
-        element.children.map(::generateBrosTree)
+        element.children.map { generateBrosTree(connections, it) }
     } else emptyList()
 
     val tree = ModelTree(
@@ -79,21 +91,39 @@ fun generateBrosTree(element: ModelElement<*>): ModelTree<ModelElement<*>> {
     )
 
     tree.children.forEach { it.parent = tree }
+
+    for (connection in connections) {
+        if (element.id == connection.relation.sourceId) {
+            tree.relations += connection
+            connection.target = tree
+        } else if (element.id == connection.relation.targetId) {
+            tree.relations += connection
+            connection.source = tree
+        }
+    }
 
     return tree
 }
 
 fun verify(bros: BrosDocument, bpmn: BpmnModel) {
-    val bpmnTree: ModelTree<BpmnElement> = generateBpmnTree(bpmn)
-    val brosTree: ModelTree<ModelElement<*>> = generateBrosTree(bros.root)
+    val bpmnTree: ModelTree<BpmnElement> = generateBpmnTree(
+            bpmn.transitiveChildren().filterIsInstance<BpmnFlow>().map { ModelRelation(it, it::class) },
+            bpmn
+    )
+    val brosTree: ModelTree<ModelElement<*>> = generateBrosTree(
+            bros.connections.connections.map { ModelRelation(it, it::class) },
+            bros.root
+    )
 
     val verifier = TreeVerifier(bpmnTree, brosTree)
 
     verifier.register(LaneVerifier())
-    verifier.register(ParticipantVerifier())
     verifier.register(TerminationEventVerifier())
+    verifier.register(EndEventVerifier())
 
     val errors = verifier.verify()
+
+    verifier.log()
 
     for (error in errors) {
         println(error.reason)

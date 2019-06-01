@@ -7,18 +7,28 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.reflect.KClass
 
-interface Verifier {
+abstract class Verifier() {
 
-    val modifier: Modifier
+    abstract val modifier: Modifier
 
-    val grouping: Grouping
+    abstract val grouping: Grouping
 
     fun filterBpmn(bpmn: ModelTree<BpmnElement>): Boolean = grouping.filterBpmn(bpmn)
 
     fun filterBros(bros: ModelTree<ModelElement<*>>): Boolean = grouping.filterBros(bros)
 
-    fun verify(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result
+    abstract fun verify(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result
 
+    private val logList = mutableListOf<String>()
+    fun log(message: Any?) {
+        logList += message.toString()
+    }
+
+    fun consumeLog(): List<String> {
+        val copy = logList.toList()
+        logList.clear()
+        return copy
+    }
 }
 
 sealed class Grouping() {
@@ -58,6 +68,22 @@ sealed class Result {
     data class Error(val reason: String) : Result()
 }
 
+typealias Listener = (bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>) -> Result
+
+abstract class AnyVerifier : Verifier() {
+
+    private val list = mutableListOf<Listener>()
+
+    override fun verify(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
+        val h = list.map { it(bpmn, bros) }
+
+        return h.firstOrNull { it is Result.Valid } ?: h.firstOrNull { it is Result.Error } ?: Result.Ignore
+    }
+
+    fun execute(verify: Listener) {
+        list += verify
+    }
+}
 
 fun match(string1: String, string2: String): Boolean {
 
