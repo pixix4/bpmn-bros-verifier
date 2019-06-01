@@ -44,7 +44,7 @@ sealed class Grouping() {
             val modifier: Modifier
     ) : Grouping() {
         override fun filterBpmn(bpmn: ModelTree<BpmnElement>): Boolean {
-            return type == bpmn.type
+            return type.isInstance(bpmn.element)
         }
     }
 
@@ -65,7 +65,7 @@ enum class Modifier {
 sealed class Result {
     object Ignore : Result()
     object Valid : Result()
-    data class Error(val reason: String) : Result()
+    data class Error(val reason: String, val source: String = "") : Result()
 }
 
 typealias Listener = (bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>) -> Result

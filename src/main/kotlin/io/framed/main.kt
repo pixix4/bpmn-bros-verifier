@@ -7,10 +7,7 @@ import io.framed.framework.ModelConnection
 import io.framed.framework.ModelElement
 import io.framed.framework.ModelElementGroup
 import io.framed.framework.util.loadAjaxFile
-import io.framed.modules.EndEventVerifier
-import io.framed.modules.LaneVerifier
-import io.framed.modules.StartEventVerifier
-import io.framed.modules.TerminationEventVerifier
+import io.framed.modules.*
 import io.framed.verifier.ModelRelation
 import io.framed.verifier.ModelTree
 import io.framed.verifier.TreeVerifier
@@ -126,13 +123,14 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel) {
     verifier.register(TerminationEventVerifier())
     verifier.register(EndEventVerifier())
     verifier.register(StartEventVerifier())
+    verifier.register(ProcessVerifier())
 
     val errors = verifier.verify()
 
     verifier.log()
 
     for (error in errors) {
-        println(error.reason)
+        println("${error.source}: ${error.reason}")
     }
 
     if (errors.isEmpty()) {

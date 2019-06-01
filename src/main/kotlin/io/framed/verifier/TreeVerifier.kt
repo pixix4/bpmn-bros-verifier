@@ -1,9 +1,7 @@
 package io.framed.verifier
 
 import io.framed.bpmn.model.BpmnElement
-import io.framed.bpmn.model.BpmnModel
 import io.framed.framework.ModelElement
-import io.framed.model.Package
 
 class Executor(
         val verifier: Verifier
@@ -28,7 +26,7 @@ class Executor(
         if (result == Result.Ignore) return
     }
 
-    fun getErrors() = aggregator.getErrors()
+    fun getErrors() = aggregator.getErrors().map { it.copy(source = verifier::class.simpleName ?: "UnknownVerifier") }
 
     interface Aggregator {
 
@@ -66,14 +64,14 @@ class Executor(
                     if (results.find { it is Result.Valid } != null) {
                         emptyList()
                     } else {
-                        listOf(Result.Error("No matching element!"))
+                        results.filterIsInstance<Result.Error>()
                     }
                 }
                 Modifier.NONE -> {
                     if (results.find { it is Result.Valid } == null) {
                         emptyList()
                     } else {
-                        listOf(Result.Error("No matching element!"))
+                        listOf(Result.Error("Found illegal matching elements!"))
                     }
                 }
             }
@@ -104,14 +102,14 @@ class Executor(
                     if (list.find { it is Result.Valid } != null) {
                         emptyList()
                     } else {
-                        listOf(Result.Error("No matching element!"))
+                        list.filterIsInstance<Result.Error>()
                     }
                 }
                 Modifier.NONE -> {
                     if (list.find { it is Result.Valid } == null) {
                         emptyList()
                     } else {
-                        listOf(Result.Error("Matching element!"))
+                        listOf(Result.Error("Found illegal matching elements!"))
                     }
                 }
             }
@@ -129,14 +127,14 @@ class Executor(
                     if (list.find { it.isEmpty() } != null) {
                         emptyList()
                     } else {
-                        listOf(Result.Error("No matching element!"))
+                        list.flatten()
                     }
                 }
                 Modifier.NONE -> {
                     if (list.find { it.isNotEmpty() } == null) {
                         emptyList()
                     } else {
-                        listOf(Result.Error("Matching element!"))
+                        listOf(Result.Error("Found illegal matching elements!"))
                     }
                 }
             }
@@ -167,7 +165,7 @@ class Executor(
                     if (list.find { it is Result.Valid } != null) {
                         emptyList()
                     } else {
-                        listOf(Result.Error("No matching element!"))
+                        list.filterIsInstance<Result.Error>()
                     }
                 }
                 Modifier.NONE -> {
@@ -192,7 +190,7 @@ class Executor(
                     if (list.find { it.isEmpty() } != null) {
                         emptyList()
                     } else {
-                        listOf(Result.Error("No matching element!"))
+                        list.flatten()
                     }
                 }
                 Modifier.NONE -> {

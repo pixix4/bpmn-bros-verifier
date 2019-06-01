@@ -12,7 +12,7 @@ class LaneVerifier() : AnyVerifier() {
 
     override val modifier = Modifier.ALL
 
-    override val grouping = Grouping.Bpmn(BpmnLane::class, Modifier.ANY)
+    override val grouping = Grouping.Bpmn(BpmnElement::class, Modifier.ANY)
 
     private fun verifyLane(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
         val lane = bpmn.model<BpmnLane>() ?: return Result.Ignore
