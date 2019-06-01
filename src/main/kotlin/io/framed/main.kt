@@ -7,14 +7,13 @@ import io.framed.framework.ModelConnection
 import io.framed.framework.ModelElement
 import io.framed.framework.ModelElementGroup
 import io.framed.framework.util.loadAjaxFile
-import io.framed.model.*
 import io.framed.modules.EndEventVerifier
 import io.framed.modules.LaneVerifier
+import io.framed.modules.StartEventVerifier
 import io.framed.modules.TerminationEventVerifier
 import io.framed.verifier.ModelRelation
 import io.framed.verifier.ModelTree
 import io.framed.verifier.TreeVerifier
-import io.framed.verifier.match
 import kotlin.browser.window
 
 @Suppress("UNUSED")
@@ -46,7 +45,7 @@ fun init() {
 
     loadAjaxFile("restaurant.bpmn") {
         bpmn = BpmnParser.parse(it) ?: throw ParseException("model")
-        console.log(bpmn?.log())
+        //console.log(bpmn?.log())
         check()
     }
 }
@@ -115,11 +114,18 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel) {
             bros.root
     )
 
+    console.log("--- bpmn ---")
+    console.log(bpmnTree.log())
+
+    console.log("--- bros ---")
+    console.log(brosTree.log())
+
     val verifier = TreeVerifier(bpmnTree, brosTree)
 
     verifier.register(LaneVerifier())
     verifier.register(TerminationEventVerifier())
     verifier.register(EndEventVerifier())
+    verifier.register(StartEventVerifier())
 
     val errors = verifier.verify()
 
@@ -134,63 +140,20 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel) {
     }
 }
 
-fun log(bros: BrosDocument, bpmn: BpmnModel) {
-    println(bros.root.name)
-    println(bpmn.content.flatMap { if (it is BpmnProcess) it.content else mutableListOf() }
-            .filterIsInstance<BpmnLaneSet>().flatMap { it.content }.map { it.name })
+fun ModelTree<BpmnElement>.containerName(): Pair<String, ModelTree<BpmnElement>>? {
+    val model = this.element
 
-    var brosNameList = listOf<String>()
-    var bpmnNameList = listOf<String>()
-
-    for (element in bros.root.getAllChildren()) {
-        if (element is Event) {
-            brosNameList += element.desc
-        } else if (element is ReturnEvent) {
-            brosNameList += element.desc
-        } else if (element is RoleType) {
-            brosNameList += element.name
-        } else if (element is Scene) {
-            brosNameList += element.name
-        } else if (element is Class) {
-            //brosNameList += element.name
+    return when (model) {
+        is BpmnLane -> {
+            model.name to this
         }
-    }
-
-    for (element in bpmn.transitiveChildren()) {
-        if (element is BpmnEvent) {
-            bpmnNameList += element.name
-        } else if (element is BpmnTask) {
-            bpmnNameList += element.name
-        } else if (element is BpmnLane) {
-            bpmnNameList += element.name
-        }
-    }
-
-    brosNameList = brosNameList.filter {
-        it.isNotBlank()
-    }.distinct()
-    bpmnNameList = bpmnNameList.filter {
-        it.isNotBlank()
-    }.distinct()
-
-    println(brosNameList)
-    println(bpmnNameList)
-
-    for (bpmnName in bpmnNameList) {
-        var found = false
-        for (brosName in brosNameList) {
-            val t1 = match(brosName, bpmnName)
-            val t2 = match(bpmnName, brosName)
-
-            if (t1 && t2) {
-                println("'$bpmnName' matches '$brosName'")
-                found = true
-            } else if (t1 || t2) {
-                println("Invalid result for '$brosName' and '$bpmnName'")
+        is BpmnProcess -> {
+            parent?.let { parent ->
+                parent.children.map { it.element }.filterIsInstance<BpmnCollaboration>().firstOrNull()?.let {
+                    it.content.filterIsInstance<BpmnParticipant>().firstOrNull { it.processRef == model.id }?.name?.let { it to this }
+                }
             }
         }
-        if (!found) {
-            println("No match for '$bpmnName'")
-        }
+        else -> parent?.let { (it as ModelTree<BpmnElement>).containerName() }
     }
 }

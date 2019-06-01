@@ -47,6 +47,14 @@ class ModelTree<out T : Any>(
     }
 
     fun asSequence() = asSequence<T>()
+
+    fun log(): dynamic {
+        val current = "<${element::class.simpleName}> $element"
+        val child = children.map(ModelTree<*>::log).toTypedArray()
+        val obj = js("{}")
+        obj[current] = child
+        return obj
+    }
 }
 
 class ModelRelation<out T : Any>(
