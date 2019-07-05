@@ -10,35 +10,35 @@ import io.framed.verifier.*
 
 class ProcessVerifier() : AnyVerifier() {
 
-    override val modifier = Modifier.ANY
+    override val modifier = Modifier.ANY("Cannot find a matching bros element for bpmn process {}")
 
-    override val grouping = Grouping.Bpmn(BpmnParticipant::class, Modifier.ANY)
+    override val grouping = Grouping.Bpmn(BpmnParticipant::class, Modifier.ANY("Cannot find a matching bros element for bpmn process {}"))
 
     private fun verifyProcessScene(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
-        val process = bpmn.model<BpmnParticipant>() ?: return Result.Ignore
-        val scene = bros.model<Scene>() ?: return Result.Ignore
+        val process = bpmn.model<BpmnParticipant>() ?: return Result.ignore(bpmn, bros)
+        val scene = bros.model<Scene>() ?: return Result.ignore(bpmn, bros)
 
         val nameMatch = match(process.name, scene.name)
 
         return if (nameMatch) {
             log("Process '${process.name}' matches scene '${scene.name}'")
-            Result.Valid
+            Result.match(bpmn, bros, "Process '${process.name}' matches scene '${scene.name}'")
         } else {
-            Result.Error("Error while checking ${process.name}")
+            Result.error(bpmn, bros, "Error while checking ${process.name}")
         }
     }
 
     private fun verifyProcessRole(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
-        val process = bpmn.model<BpmnParticipant>() ?: return Result.Ignore
-        val event = bros.model<Event>() ?: return Result.Ignore
+        val process = bpmn.model<BpmnParticipant>() ?: return Result.ignore(bpmn, bros)
+        val event = bros.model<Event>() ?: return Result.ignore(bpmn, bros)
 
         val nameMatch = match(process.name, event.desc)
 
         return if (nameMatch) {
             log("Process '${process.name}' matches event '${event.desc}'")
-            Result.Valid
+            Result.match(bpmn, bros, "Process '${process.name}' matches event '${event.desc}'")
         } else {
-            Result.Error("Error while checking ${process.name}")
+            Result.error(bpmn, bros,"Error while checking ${process.name}")
         }
     }
 

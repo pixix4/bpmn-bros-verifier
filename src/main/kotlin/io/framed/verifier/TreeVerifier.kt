@@ -23,22 +23,97 @@ class Executor(
 
         val result = verifier.verify(bpmn, bros)
 
-        if (result == Result.Ignore) return
+        aggregator.pushResult(bpmn, bros, result)
     }
 
-    fun getErrors() = aggregator.getErrors().map { it.copy(source = verifier::class.simpleName ?: "UnknownVerifier") }
+    fun aggregateResults() = aggregator.aggregateResults().map { it.copy(verifier = verifier) }
 
     interface Aggregator {
 
         fun reset()
 
-        fun aggregate(
+        fun pushResult(
                 bpmn: ModelTree<BpmnElement>,
                 bros: ModelTree<ModelElement<*>>,
-                result: Result
+                result: Result?
         )
 
-        fun getErrors(): List<Result.Error>
+        fun aggregateResults(): List<Result>
+
+        fun doStuff(results: List<Result>, modifier: Modifier): List<Result> {
+            @Suppress("NAME_SHADOWING") val results = results.filter { it.type != ResultType.IGNORE }
+
+            if (results.isEmpty()) return results
+
+            return when (modifier) {
+                is Modifier.ALL -> {
+                    results
+                }
+                is Modifier.ANY -> {
+                    val matches = results.filter { it.type == ResultType.MATCH }
+                    if (matches.isEmpty()) {
+                        listOf(Result(
+                                ResultType.ERROR,
+                                null,
+                                null,
+                                modifier.message,
+                                null
+                        ))
+                    } else matches
+                }
+                is Modifier.NONE -> {
+                    val matches = results.filter { it.type == ResultType.MATCH }
+                    if (matches.isEmpty()) {
+                        listOf(Result(
+                                ResultType.MATCH,
+                                null,
+                                null,
+                                modifier.message,
+                                null
+                        ))
+                    } else {
+                        matches.map { it.copy(type = ResultType.ERROR) }
+                    }
+                }
+            }
+        }
+
+        fun doStuffDeep(results: List<List<Result>>, modifier: Modifier): List<Result> {
+            @Suppress("NAME_SHADOWING") val results =
+                    results.map { it.filter { it.type != ResultType.IGNORE } }.filter { it.isNotEmpty() }
+
+            if (results.isEmpty()) return emptyList()
+
+            val list = results.map {
+                Pair(
+                        it.firstOrNull { it.type == ResultType.MATCH } != null,
+                        it.firstOrNull { it.type == ResultType.ERROR } != null
+                ) to it
+            }
+            return when (modifier) {
+                is Modifier.ALL -> {
+                    if (list.none { !it.first.first }) {
+                        results.flatten().filter { it.type == ResultType.MATCH }
+                    } else {
+                        results.flatten()
+                    }
+                }
+                is Modifier.ANY -> {
+                    if (list.any { it.first.first }) {
+                        results.flatten().filter { it.type == ResultType.MATCH }
+                    } else {
+                        results.flatten()
+                    }
+                }
+                is Modifier.NONE -> {
+                    if (list.none { it.first.first }) {
+                        results.flatten().filter { it.type == ResultType.MATCH }
+                    } else {
+                        results.flatten()
+                    }
+                }
+            }
+        }
     }
 
     inner class DefaultAggregator : Aggregator {
@@ -49,158 +124,56 @@ class Executor(
             results.clear()
         }
 
-        override fun aggregate(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>, result: Result) {
-            if (result == Result.Ignore) return
-
-            results += result
+        override fun pushResult(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>, result: Result?) {
+            results += result ?: return
         }
 
-        override fun getErrors(): List<Result.Error> {
-            return when (verifier.modifier) {
-                Modifier.ALL -> {
-                    results.filterIsInstance<Result.Error>()
-                }
-                Modifier.ANY -> {
-                    if (results.find { it is Result.Valid } != null) {
-                        emptyList()
-                    } else {
-                        results.filterIsInstance<Result.Error>()
-                    }
-                }
-                Modifier.NONE -> {
-                    if (results.find { it is Result.Valid } == null) {
-                        emptyList()
-                    } else {
-                        listOf(Result.Error("Found illegal matching elements!"))
-                    }
-                }
-            }
-        }
+        override fun aggregateResults(): List<Result> = doStuff(results, verifier.modifier)
     }
 
     inner class BpmnGroupingAggregator(private val grouping: Grouping.Bpmn<*>) : Aggregator {
 
-        private val results = mutableMapOf<Any, MutableList<Result>>()
+        private val results = mutableMapOf<ModelTree<BpmnElement>, MutableList<Result>>()
 
         override fun reset() {
             results.clear()
         }
 
-        override fun aggregate(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>, result: Result) {
-            if (result == Result.Ignore) return
-
-            val list = results.getOrPut(bpmn.element) { mutableListOf() }
-            list += result
+        override fun pushResult(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>, result: Result?) {
+            results.getOrPut(bpmn) { mutableListOf() } += result ?: return
         }
 
-        private fun getEntryErrors(key: Any, list: List<Result>): List<Result.Error> {
-            return when (grouping.modifier) {
-                Modifier.ALL -> {
-                    list.filterIsInstance<Result.Error>()
-                }
-                Modifier.ANY -> {
-                    if (list.find { it is Result.Valid } != null) {
-                        emptyList()
-                    } else {
-                        list.filterIsInstance<Result.Error>()
-                    }
-                }
-                Modifier.NONE -> {
-                    if (list.find { it is Result.Valid } == null) {
-                        emptyList()
-                    } else {
-                        listOf(Result.Error("Found illegal matching elements!"))
-                    }
-                }
-            }
-        }
-
-        override fun getErrors(): List<Result.Error> {
+        override fun aggregateResults(): List<Result> {
             val list = results.map { (key, value) ->
-                getEntryErrors(key, value)
-            }
-            return when (verifier.modifier) {
-                Modifier.ALL -> {
-                    list.flatten()
-                }
-                Modifier.ANY -> {
-                    if (list.find { it.isEmpty() } != null) {
-                        emptyList()
-                    } else {
-                        list.flatten()
-                    }
-                }
-                Modifier.NONE -> {
-                    if (list.find { it.isNotEmpty() } == null) {
-                        emptyList()
-                    } else {
-                        listOf(Result.Error("Found illegal matching elements!"))
-                    }
+                doStuff(value, grouping.modifier).map {
+                    it.copy(bpmn = key, message = it.message.replace("{}", key.element.stringify()))
                 }
             }
+
+            return doStuffDeep(list, verifier.modifier)
         }
     }
 
     inner class BrosGroupingAggregator(private val grouping: Grouping.Bros<*>) : Aggregator {
 
-        private val results = mutableMapOf<Any, MutableList<Result>>()
+        private val results = mutableMapOf<ModelTree<ModelElement<*>>, MutableList<Result>>()
 
         override fun reset() {
             results.clear()
         }
 
-        override fun aggregate(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>, result: Result) {
-            if (result == Result.Ignore) return
-
-            val list = results.getOrPut(bros.element) { mutableListOf() }
-            list += result
+        override fun pushResult(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>, result: Result?) {
+            results.getOrPut(bros) { mutableListOf() } += result ?: return
         }
 
-        private fun getEntryErrors(key: Any, list: List<Result>): List<Result.Error> {
-            return when (grouping.modifier) {
-                Modifier.ALL -> {
-                    list.filterIsInstance<Result.Error>()
-                }
-                Modifier.ANY -> {
-                    if (list.find { it is Result.Valid } != null) {
-                        emptyList()
-                    } else {
-                        list.filterIsInstance<Result.Error>()
-                    }
-                }
-                Modifier.NONE -> {
-                    if (list.find { it is Result.Valid } == null) {
-                        emptyList()
-                    } else {
-                        listOf(Result.Error("Matching element!"))
-                    }
-                }
-            }
-        }
-
-        override fun getErrors(): List<Result.Error> {
+        override fun aggregateResults(): List<Result> {
             val list = results.map { (key, value) ->
-                getEntryErrors(key, value)
-            }
-            return when (verifier.modifier) {
-                Modifier.ALL -> {
-                    list.flatten()
-                }
-                Modifier.ANY -> {
-                    if (list.find { it.isEmpty() } != null) {
-                        emptyList()
-                    } else {
-                        list.flatten()
-                    }
-                }
-                Modifier.NONE -> {
-                    if (list.find { it.isNotEmpty() } == null) {
-                        emptyList()
-                    } else {
-                        listOf(Result.Error("Matching element!"))
-                    }
+                doStuff(value, grouping.modifier).map {
+                    it.copy(bros = key, message = it.message.replace("{}", key.element.toString()))
                 }
             }
+
+            return doStuffDeep(list, verifier.modifier)
         }
     }
 }
@@ -216,9 +189,11 @@ class TreeVerifier(
         executorList += Executor(verifier)
     }
 
-    fun verify(): List<Result.Error> {
-        val bpmnSequence = bpmnTree.asSequence<BpmnElement>()
-        val brosSequence = brosTree.asSequence<ModelElement<*>>()
+    fun indexOf(verifier: Verifier): Int = executorList.indexOfFirst { it.verifier == verifier }
+
+    fun verify(): List<Result> {
+        val bpmnSequence = bpmnTree.asSequence<BpmnElement>().toList()
+        val brosSequence = brosTree.asSequence<ModelElement<*>>().toList()
 
         for (executor in executorList) {
             executor.reset()
@@ -227,23 +202,20 @@ class TreeVerifier(
         for (bpmn in bpmnSequence) {
             for (bros in brosSequence) {
                 for (executor in executorList) {
-                    executor.execute(bpmn, bros)
+                    executor.buildMatching(bpmn, bros)
                 }
             }
         }
 
-        return executorList.flatMap { it.getErrors() }
-    }
-
-    fun log() {
         for (executor in executorList) {
-            val verifier = executor.verifier
-
-            val name = verifier::class.simpleName ?: "UnknownVerifier"
-            val log = verifier.consumeLog()
-
-            console.log("--- $name ---")
-            console.log(log.toTypedArray())
+            for (bpmn in bpmnSequence) {
+                executor.verifyBpmn(bpmn)
+            }
+            for (bros in brosSequence) {
+                executor.verifyBros(bros)
+            }
         }
+
+        return executorList.flatMap { it.aggregateResults() }
     }
 }

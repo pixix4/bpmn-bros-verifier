@@ -10,7 +10,11 @@ import io.framed.framework.util.loadAjaxFile
 import io.framed.modules.*
 import io.framed.verifier.ModelRelation
 import io.framed.verifier.ModelTree
+import io.framed.verifier.Result
+import io.framed.verifier.ResultType
 import io.framed.verifier.TreeVerifier
+import org.w3c.dom.Element
+import kotlin.browser.document
 import kotlin.browser.window
 
 @Suppress("UNUSED")
@@ -125,23 +129,72 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel) {
     verifier.register(StartEventVerifier())
     verifier.register(ProcessVerifier())
 
-    val errors = verifier.verify()
+    val results = verifier.verify()
 
     verifier.log()
 
-    for (error in errors) {
-        println("${error.source}: ${error.reason}")
+    val (matches, errors) = results.partition { it.type == ResultType.MATCH }
+
+    println("\nMatches:")
+    for (r in matches) {
+        println(r)
     }
 
-    if (errors.isEmpty()) {
-        println("All checks passed!")
+    println("\nErrors:")
+    for (r in errors) {
+        println(r)
     }
+
+    for ((_, l) in results.groupBy { it.verifier }) {
+
+        val box = document.createElement("div")
+        box.classList.add("entry-box")
+
+        for (r in l)
+        box.appendChild(renderResult(verifier, r))
+
+        document.body!!.appendChild(box)
+    }
+
+    println("\n" + if (errors.isEmpty()) "All checks passed!" else "${errors.size} error(s) occurred!")
 }
 
-fun ModelTree<BpmnElement>.containerName(): Pair<String, ModelTree<BpmnElement>>? {
-    val model = this.element
+fun renderResult(verifier: TreeVerifier, result: Result): Element {
+    val entry = document.createElement("div")
+    entry.classList.add("entry")
+    entry.classList.add("entry-${verifier.indexOf(result.verifier!!)}")
+    when (result.type) {
+        ResultType.MATCH -> entry.classList.add("entry-match")
+        ResultType.ERROR -> entry.classList.add("entry-error")
+        ResultType.IGNORE -> entry.classList.add("entry-ignore")
+    }
+    
+    val bpmnElement = document.createElement("span")
+    bpmnElement.classList.add("entry-bpmn")
+    bpmnElement.textContent = result.bpmn.toString()
+    entry.appendChild(bpmnElement)
+    
+    val brosElement = document.createElement("span")
+    brosElement.classList.add("entry-bros")
+    brosElement.textContent = result.bros.toString()
+    entry.appendChild(brosElement)
+    
+    val messageElement = document.createElement("span")
+    messageElement.classList.add("entry-message")
+    messageElement.textContent = result.message
+    entry.appendChild(messageElement)
+    
+    val verifierElement = document.createElement("span")
+    verifierElement.classList.add("entry-verifier")
+    verifierElement.textContent = result.verifier.name
+    entry.appendChild(verifierElement)
 
-    return when (model) {
+    return entry
+}
+
+@Suppress("UNCHECKED_CAST")
+fun ModelTree<BpmnElement>.containerName(): Pair<String, ModelTree<BpmnElement>>? {
+    return when (val model = this.element) {
         is BpmnLane -> {
             model.name to this
         }

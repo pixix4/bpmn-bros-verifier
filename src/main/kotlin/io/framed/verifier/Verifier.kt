@@ -17,18 +17,11 @@ abstract class Verifier() {
 
     fun filterBros(bros: ModelTree<ModelElement<*>>): Boolean = grouping.filterBros(bros)
 
-    abstract fun verify(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result
+    abstract fun verify(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result?
 
-    private val logList = mutableListOf<String>()
-    fun log(message: Any?) {
-        logList += message.toString()
-    }
+    val name: String = this::class.simpleName ?: "UnknownVerifier"
 
-    fun consumeLog(): List<String> {
-        val copy = logList.toList()
-        logList.clear()
-        return copy
-    }
+    override fun toString() = "$name(modifier: ${modifier::class.simpleName})"
 }
 
 sealed class Grouping() {
@@ -58,14 +51,78 @@ sealed class Grouping() {
     }
 }
 
-enum class Modifier {
-    ALL, ANY, NONE
+sealed class Modifier {
+    object ALL : Modifier()
+    data class ANY(val message: String) : Modifier()
+    data class NONE(val message: String) : Modifier()
 }
 
-sealed class Result {
-    object Ignore : Result()
-    object Valid : Result()
-    data class Error(val reason: String, val source: String = "") : Result()
+enum class ResultType {
+    MATCH, ERROR, IGNORE
+}
+
+data class Result(
+        val type: ResultType,
+        val bpmn: ModelTree<BpmnElement>?,
+        val bros: ModelTree<ModelElement<*>>?,
+        val message: String,
+        val verifier: Verifier?
+) {
+    companion object {
+        fun ignore(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>) = Result(
+                ResultType.IGNORE,
+                bpmn,
+                bros,
+                "",
+                null
+        )
+
+        fun match(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>, message: String) = Result(
+                ResultType.MATCH,
+                bpmn,
+                bros,
+                message,
+                null
+        )
+
+        fun error(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>, message: String) = Result(
+                ResultType.ERROR,
+                bpmn,
+                bros,
+                message,
+                null
+        )
+    }
+}
+
+data class VerifyResult(
+        val environment: List<Result>,
+        val bpmn: Map<BpmnElement, List<Result>>,
+        val bros: Map<ModelElement<*>, List<Result>>
+) {
+    val hasErrors by lazy {
+        bpmn.values.asSequence().flatten().firstOrNull { it.type == ResultType.ERROR } != null ||
+                bros.values.asSequence().flatten().firstOrNull { it.type == ResultType.ERROR } != null
+    }
+
+    companion object {
+        fun buildResult(results: List<Result>): VerifyResult {
+            val filtered = results.filter { it.type != ResultType.IGNORE }
+
+            val environment = filtered.filter { it.bros == null || it.bpmn == null }
+
+            val bpmn = filtered.groupBy { it.bpmn }
+                    .asSequence()
+                    .mapNotNull { entry -> entry.key?.let { it.element to entry.value } }
+                    .toMap()
+            val bros = filtered.groupBy { it.bros }
+                    .asSequence()
+                    .mapNotNull { entry -> entry.key?.let { it.element to entry.value } }
+                    .toMap()
+
+            return VerifyResult(environment, bpmn, bros)
+        }
+    }
 }
 
 typealias Listener = (bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>) -> Result
@@ -77,7 +134,8 @@ abstract class AnyVerifier : Verifier() {
     override fun verify(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
         val h = list.map { it(bpmn, bros) }
 
-        return h.firstOrNull { it is Result.Valid } ?: h.firstOrNull { it is Result.Error } ?: Result.Ignore
+        return h.firstOrNull { it.type == ResultType.MATCH } ?: h.firstOrNull { it.type == ResultType.ERROR }
+        ?: h.firstOrNull() ?: throw IllegalStateException("No listener in any verifier")
     }
 
     fun execute(verify: Listener) {

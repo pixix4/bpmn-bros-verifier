@@ -1,5 +1,7 @@
 package io.framed.verifier
 
+import io.framed.bpmn.model.BpmnElement
+import io.framed.framework.ModelElement
 import kotlin.reflect.KClass
 
 class ModelTree<out T : Any>(
@@ -54,6 +56,12 @@ class ModelTree<out T : Any>(
         val obj = js("{}")
         obj[current] = child
         return obj
+    }
+
+    override fun toString() = when (element) {
+        is BpmnElement -> element.log(false)
+        is ModelElement<*> -> element.id.toString()
+        else -> element.toString()
     }
 }
 

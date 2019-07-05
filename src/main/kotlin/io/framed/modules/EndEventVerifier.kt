@@ -11,45 +11,45 @@ class EndEventVerifier() : AnyVerifier() {
 
     override val modifier = Modifier.ALL
 
-    override val grouping = Grouping.Bpmn(BpmnEvent::class, Modifier.ANY)
+    override val grouping = Grouping.Bpmn(BpmnEvent::class, Modifier.ANY("Cannot find a matching bros element for bpmn end event {}"))
 
     private fun verifyEndReturnEvent(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
-        val bpmnEvent = bpmn.model<BpmnEvent>() ?: return Result.Ignore
-        val returnEvent = bros.model<ReturnEvent>() ?: return Result.Ignore
+        val bpmnEvent = bpmn.model<BpmnEvent>() ?: return Result.ignore(bpmn, bros)
+        val returnEvent = bros.model<ReturnEvent>() ?: return Result.ignore(bpmn, bros)
 
-        if (bpmnEvent.terminationEvent) return Result.Ignore
+        if (bpmnEvent.terminationEvent) return Result.ignore(bpmn, bros)
 
         val nameMatch = match(bpmnEvent.name, returnEvent.desc)
 
         return if (nameMatch) {
             log("End event '${bpmnEvent.name}' matches return event '${returnEvent.desc}'")
-            Result.Valid
+            Result.match(bpmn, bros, "End event '${bpmnEvent.name}' matches return event '${returnEvent.desc}'")
         } else {
-            Result.Error("Error while checking ${bpmnEvent.name}")
+            Result.error(bpmn, bros, "Error while checking ${bpmnEvent.name}")
         }
     }
 
     private fun verifyEndDestroyEvent(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
-        val bpmnEvent = bpmn.model<BpmnEvent>() ?: return Result.Ignore
-        val brosEvent = bros.model<Event>() ?: return Result.Ignore
+        val bpmnEvent = bpmn.model<BpmnEvent>() ?: return Result.ignore(bpmn, bros)
+        val brosEvent = bros.model<Event>() ?: return Result.ignore(bpmn, bros)
 
-        if (bpmnEvent.type != BpmnEvent.Type.END || bpmnEvent.terminationEvent) return Result.Ignore
+        if (bpmnEvent.type != BpmnEvent.Type.END || bpmnEvent.terminationEvent) return Result.ignore(bpmn, bros)
 
         val nameMatch = match(bpmnEvent.name, brosEvent.desc)
 
-        val container = bpmn.containerName() ?: return Result.Error("Error while checking ${bpmnEvent.name}")
+        val container = bpmn.containerName() ?: return Result.error(bpmn, bros, "Error while checking ${bpmnEvent.name}")
         val destroysName = bros.relations<DestroyRelationship>().firstOrNull()?.target?.let {
             it.model<Scene>()?.name ?: it.model<RoleType>()?.name
-        } ?: return Result.Error("Error while checking ${bpmnEvent.name}")
+        } ?: return Result.error(bpmn, bros, "Error while checking ${bpmnEvent.name}")
 
 
         val destroyNameMatch = match(container.first, destroysName)
 
         return if (nameMatch && destroyNameMatch) {
             log("End event '${bpmnEvent.name}' matches event '${brosEvent.desc}' and destroys '$destroysName'")
-            Result.Valid
+            Result.match(bpmn, bros, "End event '${bpmnEvent.name}' matches event '${brosEvent.desc}' and destroys '$destroysName'")
         } else {
-            Result.Error("Error while checking ${bpmnEvent.name}")
+            Result.error(bpmn, bros, "Error while checking ${bpmnEvent.name}")
         }
     }
 

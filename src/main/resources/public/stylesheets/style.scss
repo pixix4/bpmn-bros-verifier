@@ -1,2 +1,101 @@
-@import "main";
-@import "uml";
+body, html {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: #333;
+  background: #eee;
+  font-family: Roboto, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  overflow-y: scroll;
+  padding-top: 0.5rem;
+}
+
+.entry-box {
+  border-radius: 0.2rem;
+  overflow: hidden;
+  border: solid 1px rgba(#000, 0.5);
+  box-shadow: 0 1px 4px rgba(#000, 0.5);
+  position: relative;
+  margin: 0.5rem 0.5rem 1rem;
+}
+
+.entry {
+  background-color: #fff;
+  border-top: solid 1px rgba(#000, 0.5);
+  position: relative;
+  height: 5.5rem;
+
+  &::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 1rem;
+    content: '';
+    display: block;
+  }
+
+  &.entry-match::before {
+    background-color: #66BB6A;
+  }
+
+  &.entry-error::before {
+    background-color: #F44336;
+  }
+
+  &.entry-ignore::before {
+    background-color: #aaa;
+  }
+
+  &:first-child {
+    border-top: none;
+  }
+}
+
+.entry-bpmn, .entry-bros, .entry-verifier, .entry-message {
+  position: absolute;
+  top: 1.2rem;
+  left: 2rem;
+  &::before {
+    content: 'BPMN';
+    position: absolute;
+    top: -0.7rem;
+    left: 0;
+    font-size: 0.7rem;
+  }
+}
+
+.entry-bros {
+  left: 50%;
+  &::before {
+    content: 'BROS';
+  }
+}
+
+
+.entry-verifier {
+  left: auto;
+  right: 11rem;
+  width: 10rem;
+  &::before {
+    content: 'Verifier';
+  }
+}
+
+.entry-message {
+  top: auto;
+  bottom: 0.6rem;
+  &::before {
+    content: 'Message';
+  }
+}
