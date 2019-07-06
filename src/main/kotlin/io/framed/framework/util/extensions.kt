@@ -9,6 +9,8 @@ import org.w3c.files.FileReader
 import org.w3c.xhr.XMLHttpRequest
 import kotlin.browser.document
 import kotlin.browser.window
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 /**
  * @author lars
@@ -97,7 +99,11 @@ fun loadLocalFile(success: (String) -> Unit) {
     document.body?.removeChild(element)
 }
 
-inline fun <reified V : HTMLElement> createHtmlView(tag: String? = null): V {
+inline fun <reified V : HTMLElement> createHtmlView(tag: String? = null, init: V.() -> Unit = {}): V {
+    contract {
+        callsInPlace(init, InvocationKind.EXACTLY_ONCE)
+    }
+
     var tagName: String
     if (tag != null) {
         tagName = tag
@@ -107,7 +113,19 @@ inline fun <reified V : HTMLElement> createHtmlView(tag: String? = null): V {
             tagName = "div"
         }
     }
-    return document.createElement(tagName) as V
+    val element = document.createElement(tagName) as V
+    element.init()
+    return element
+}
+
+inline fun <reified V: HTMLElement> HTMLElement.createView(tag: String? = null, init: V.() -> Unit = {}): V {
+    contract {
+        callsInPlace(init, InvocationKind.EXACTLY_ONCE)
+    }
+
+    val element = createHtmlView<V>(tag, init)
+    appendChild(element)
+    return element
 }
 
 inline fun <reified T> EventHandler<T>.bind(element: HTMLElement, event: String) {

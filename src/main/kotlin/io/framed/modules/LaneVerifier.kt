@@ -1,64 +1,65 @@
 package io.framed.modules
 
-import io.framed.bpmn.model.BpmnElement
-import io.framed.bpmn.model.BpmnLane
-import io.framed.bpmn.model.BpmnParticipant
-import io.framed.framework.ModelElement
-import io.framed.model.RoleType
-import io.framed.model.Scene
-import io.framed.verifier.*
+import io.framed.framework.Context
+import io.framed.framework.matcher.matchStrings
+import io.framed.framework.verifier.Result
+import io.framed.model.bpmn.model.BpmnLane
+import io.framed.model.bpmn.model.BpmnParticipant
+import io.framed.model.bpmn.model.BpmnProcess
+import io.framed.model.bros.Event
+import io.framed.model.bros.RoleType
+import io.framed.model.bros.Scene
 
-class LaneVerifier() : AnyVerifier() {
-
-    override val modifier = Modifier.ALL
-
-    override val grouping = Grouping.Bpmn(BpmnElement::class, Modifier.ANY("Cannot find a matching bros element for bpmn lane {}"))
-
-    private fun verifyLane(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
-        val lane = bpmn.model<BpmnLane>() ?: return Result.ignore(bpmn, bros)
-        val role = bros.model<RoleType>() ?: return Result.ignore(bpmn, bros)
-
-        val nameMatch = match(lane.name, role.name)
-
-        return if (nameMatch) {
-            log("Lane '${lane.name}' matches role '${role.name}'")
-            Result.match(bpmn, bros, "Lane '${lane.name}' matches role '${role.name}'")
-        } else {
-            Result.error(bpmn, bros, "Error while checking ${lane.name}")
-        }
+fun Context.setupLane() {
+    match<BpmnLane, RoleType> { lane, role ->
+        matchStrings(lane.element.name, role.element.name)
     }
 
-    private fun verifyParticipantScene(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
-        val participant = bpmn.model<BpmnParticipant>() ?: return Result.ignore(bpmn, bros)
-        val scene = bros.model<Scene>() ?: return Result.ignore(bpmn, bros)
-
-        val nameMatch = match(participant.name, scene.name)
-
-        return if (nameMatch) {
-            log("Participant '${participant.name}' matches scene '${scene.name}'")
-            Result.match(bpmn, bros, "Participant '${participant.name}' matches scene '${scene.name}'")
-        } else {
-            Result.error(bpmn, bros, "Error while checking ${participant.name}")
-        }
+    match<BpmnParticipant, Scene> { lane, scene ->
+        matchStrings(lane.element.name, scene.element.name)
+    }
+    match<BpmnParticipant, RoleType> { lane, role ->
+        matchStrings(lane.element.name, role.element.name)
+    }
+    match<BpmnParticipant, Event> { bpmn, bros ->
+        matchStrings(bpmn.element.name, bros.element.desc)
     }
 
-    private fun verifyParticipantRole(bpmn: ModelTree<BpmnElement>, bros: ModelTree<ModelElement<*>>): Result {
-        val participant = bpmn.model<BpmnParticipant>() ?: return Result.ignore(bpmn, bros)
-        val role = bros.model<RoleType>() ?: return Result.ignore(bpmn, bros)
-
-        val nameMatch = match(participant.name, role.name)
-
-        return if (nameMatch) {
-            log("Participant '${participant.name}' matches role '${role.name}'")
-            Result.match(bpmn, bros, "Participant '${participant.name}' matches role '${role.name}'")
-        } else {
-            Result.error(bpmn, bros, "Error while checking ${participant.name}")
-        }
+    match<BpmnProcess, Scene> { process, scene ->
+        process.element.participant != null && matchStrings(process.element.participant!!.name, scene.element.name)
+    }
+    match<BpmnProcess, RoleType> { process, role ->
+        process.element.participant != null && matchStrings(process.element.participant!!.name, role.element.name)
+    }
+    match<BpmnProcess, Event> { process, bros ->
+        process.element.participant != null && matchStrings(process.element.participant!!.name, bros.element.desc)
     }
 
-    init {
-        execute(this::verifyLane)
-        execute(this::verifyParticipantScene)
-        execute(this::verifyParticipantRole)
+    verifyBpmn<BpmnLane>("BpmnLaneVerifier") { bpmn ->
+        for (match in bpmn.matchingElements) {
+            val roleType = match.model<RoleType>()
+            if (roleType != null) {
+                return@verifyBpmn Result.match("BpmnLane '${bpmn.element.name}' matches RoleType '${roleType.name}'", bros = match)
+            }
+        }
+        Result.error("Cannot find matching bros element for BpmnLane '${bpmn.element.name}'")
+    }
+
+    verifyBpmn<BpmnParticipant>("BpmnParticipantVerifier") { bpmn ->
+        for (match in bpmn.matchingElements) {
+            val roleType = match.model<RoleType>()
+            if (roleType != null) {
+                return@verifyBpmn Result.match("BpmnParticipant '${bpmn.element.name}' matches RoleType '${roleType.name}'", bros = match)
+            }
+            val scene = match.model<Scene>()
+            if (scene != null) {
+                return@verifyBpmn Result.match("BpmnParticipant '${bpmn.element.name}' matches Scene '${scene.name}'", bros = match)
+            }
+            val event = match.model<Event>()
+            if (event != null) {
+                return@verifyBpmn Result.match("BpmnParticipant '${bpmn.element.name}' matches Event '${event.desc}'", bros = match)
+            }
+        }
+        Result.error("Cannot find matching bros element for BpmnParticipant '${bpmn.element.name}'")
     }
 }

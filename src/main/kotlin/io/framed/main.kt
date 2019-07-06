@@ -1,18 +1,23 @@
 package io.framed
 
-import io.framed.bpmn.ParseException
-import io.framed.bpmn.model.*
-import io.framed.bpmn.xml.BpmnParser
-import io.framed.framework.ModelConnection
-import io.framed.framework.ModelElement
-import io.framed.framework.ModelElementGroup
+import io.framed.framework.Context
+import io.framed.framework.ModelRelation
+import io.framed.framework.ModelTree
+import io.framed.framework.matcher.TreeMatcher
+import io.framed.framework.util.BrosDocument
+import io.framed.framework.util.BrosParser
+import io.framed.framework.util.createHtmlView
 import io.framed.framework.util.loadAjaxFile
-import io.framed.modules.*
-import io.framed.verifier.ModelRelation
-import io.framed.verifier.ModelTree
-import io.framed.verifier.Result
-import io.framed.verifier.ResultType
-import io.framed.verifier.TreeVerifier
+import io.framed.framework.verifier.Result
+import io.framed.framework.verifier.TreeVerifier
+import io.framed.model.bpmn.ParseException
+import io.framed.model.bpmn.model.*
+import io.framed.model.bpmn.xml.BpmnParser
+import io.framed.model.bros.ModelConnection
+import io.framed.model.bros.ModelElement
+import io.framed.model.bros.ModelElementGroup
+import io.framed.modules.setupEvent
+import io.framed.modules.setupLane
 import org.w3c.dom.Element
 import kotlin.browser.document
 import kotlin.browser.window
@@ -46,7 +51,6 @@ fun init() {
 
     loadAjaxFile("restaurant.bpmn") {
         bpmn = BpmnParser.parse(it) ?: throw ParseException("model")
-        //console.log(bpmn?.log())
         check()
     }
 }
@@ -105,6 +109,7 @@ fun generateBrosTree(connections: List<ModelRelation<ModelConnection<*>>>, eleme
     return tree
 }
 
+@Suppress("UnsafeCastFromDynamic")
 fun verify(bros: BrosDocument, bpmn: BpmnModel) {
     val bpmnTree: ModelTree<BpmnElement> = generateBpmnTree(
             bpmn.transitiveChildren().filterIsInstance<BpmnFlow>().map { ModelRelation(it, it::class) },
@@ -121,75 +126,25 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel) {
     console.log("--- bros ---")
     console.log(brosTree.log())
 
+    val context = Context()
+
+    context.setupLane()
+    context.setupEvent()
+
+    val matcher = TreeMatcher(bpmnTree, brosTree)
+    for (m in context.matcherList) {
+        matcher.register(m)
+    }
+    matcher.match()
+
     val verifier = TreeVerifier(bpmnTree, brosTree)
-
-    verifier.register(LaneVerifier())
-    verifier.register(TerminationEventVerifier())
-    verifier.register(EndEventVerifier())
-    verifier.register(StartEventVerifier())
-    verifier.register(ProcessVerifier())
-
+    for (v in context.verifierList) {
+        verifier.register(v)
+    }
     val results = verifier.verify()
 
-    verifier.log()
+    render(bpmnTree, brosTree, results)
 
-    val (matches, errors) = results.partition { it.type == ResultType.MATCH }
-
-    println("\nMatches:")
-    for (r in matches) {
-        println(r)
-    }
-
-    println("\nErrors:")
-    for (r in errors) {
-        println(r)
-    }
-
-    for ((_, l) in results.groupBy { it.verifier }) {
-
-        val box = document.createElement("div")
-        box.classList.add("entry-box")
-
-        for (r in l)
-        box.appendChild(renderResult(verifier, r))
-
-        document.body!!.appendChild(box)
-    }
-
-    println("\n" + if (errors.isEmpty()) "All checks passed!" else "${errors.size} error(s) occurred!")
-}
-
-fun renderResult(verifier: TreeVerifier, result: Result): Element {
-    val entry = document.createElement("div")
-    entry.classList.add("entry")
-    entry.classList.add("entry-${verifier.indexOf(result.verifier!!)}")
-    when (result.type) {
-        ResultType.MATCH -> entry.classList.add("entry-match")
-        ResultType.ERROR -> entry.classList.add("entry-error")
-        ResultType.IGNORE -> entry.classList.add("entry-ignore")
-    }
-    
-    val bpmnElement = document.createElement("span")
-    bpmnElement.classList.add("entry-bpmn")
-    bpmnElement.textContent = result.bpmn.toString()
-    entry.appendChild(bpmnElement)
-    
-    val brosElement = document.createElement("span")
-    brosElement.classList.add("entry-bros")
-    brosElement.textContent = result.bros.toString()
-    entry.appendChild(brosElement)
-    
-    val messageElement = document.createElement("span")
-    messageElement.classList.add("entry-message")
-    messageElement.textContent = result.message
-    entry.appendChild(messageElement)
-    
-    val verifierElement = document.createElement("span")
-    verifierElement.classList.add("entry-verifier")
-    verifierElement.textContent = result.verifier.name
-    entry.appendChild(verifierElement)
-
-    return entry
 }
 
 @Suppress("UNCHECKED_CAST")
