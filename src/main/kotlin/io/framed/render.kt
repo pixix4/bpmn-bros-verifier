@@ -9,6 +9,7 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLSpanElement
 import org.w3c.dom.events.EventListener
+import org.w3c.dom.set
 import kotlin.browser.document
 import kotlin.dom.clear
 
@@ -25,41 +26,35 @@ data class Entry(
             classList.add("entry", "entry-${type.name.toLowerCase()}")
 
             createView<HTMLDivElement> {
-                createView<HTMLSpanElement> {
-                    classList.add("entry-bpmn")
-                    textContent = bpmn.fillEmpty()
-                }
-
-                createView<HTMLSpanElement> {
-                    classList.add("entry-bros")
-                    textContent = bros.fillEmpty()
-                }
-
-                createView<HTMLSpanElement> {
-                    classList.add("entry-module")
-                    textContent = module.fillEmpty()
-                }
+                field("BPMN", bpmn)
+                field("BROS", bros)
+                field("Module", module)
             }
 
             createView<HTMLDivElement> {
-                createView<HTMLSpanElement> {
-                    classList.add("entry-message")
-                    textContent = message.fillEmpty()
-                }
+                field("Message", message)
             }
         }
-    }
-
-    private fun Any?.fillEmpty(): String {
-        if (this == null) return " "
-        val str = toString()
-        if (str.isBlank()) return " "
-        return str
     }
 
     enum class Type {
         ERROR, WARN, INFO, ACCEPT
     }
+}
+
+private fun HTMLElement.field(name: String, value: Any?) {
+    createView<HTMLSpanElement> {
+        classList.add("field")
+        textContent = value.fillEmpty()
+        dataset["title"] = name
+    }
+}
+
+private fun Any?.fillEmpty(): String {
+    if (this == null) return " "
+    val str = toString()
+    if (str.isBlank()) return " "
+    return str
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -82,6 +77,56 @@ fun render(
         createView<HTMLDivElement> {
             classList.add("container")
 
+            createView<HTMLDivElement> {
+                classList.add("container-stats")
+
+                createView<HTMLDivElement> {
+                    dataset["title"] = "Verification stats"
+                    val matches = results.count { it.type == Result.Type.MATCH }
+                    val errors = results.count { it.type == Result.Type.ERROR }
+                    field("Successful checks", "$matches of ${results.size}")
+                    field("Errors", "$errors of ${results.size}")
+                    field("Coverage", "${matches * 100 / results.size}%")
+                }
+                createView<HTMLDivElement> {
+                    dataset["title"] = "BPMN matching stats"
+                    var count = 0
+                    var matches = 0
+                    var doubles = 0
+                    for (element in bpmn.asSequence()) {
+                        count++
+                        if (element.matchingElements.isNotEmpty()) {
+                            matches++
+                            if (element.matchingElements.size > 1) {
+                                doubles++
+                            }
+                        }
+                    }
+                    field("Matched elements", "$matches of $count")
+                    field("Unmatched elements", "${count - matches} of $count")
+                    field("Multiple matches", doubles)
+                    field("Coverage", "${matches * 100 / count}%")
+                }
+                createView<HTMLDivElement> {
+                    dataset["title"] = "BROS matching stats"
+                    var count = 0
+                    var matches = 0
+                    var doubles = 0
+                    for (element in bros.asSequence()) {
+                        count++
+                        if (element.matchingElements.isNotEmpty()) {
+                            matches++
+                            if (element.matchingElements.size > 1) {
+                                doubles++
+                            }
+                        }
+                    }
+                    field("Matched elements", "$matches of $count")
+                    field("Unmatched elements", "${count - matches} of $count")
+                    field("Multiple matches", doubles)
+                    field("Coverage", "${matches * 100 / count}%")
+                }
+            }
 
             createView<HTMLDivElement> {
                 classList.add("container-header")

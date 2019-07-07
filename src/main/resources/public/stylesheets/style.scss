@@ -30,7 +30,7 @@ body {
 
 .entry {
   background-color: #fff;
-  border-top: solid 1px rgba(#000, 0.5);
+  border-top: solid 1px rgba(#000, 0.2);
   position: relative;
 
   &::before {
@@ -42,6 +42,7 @@ body {
     content: '';
     display: block;
   }
+
   &.entry-error::before {
     background-color: #F44336;
   }
@@ -66,18 +67,8 @@ body {
   padding-bottom: 1rem;
 
   span {
-    position: relative;
-    flex-grow: 1;
     padding-right: 1rem;
     min-width: 20%;
-    padding-top: 1.5rem;
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0.6rem;
-      left: 0;
-      font-size: 0.7rem;
-    }
   }
 
   div {
@@ -89,28 +80,23 @@ body {
   }
 }
 
-.entry-bpmn {
+.field {
+  position: relative;
+  padding-top: 1.5rem;
+  display: block;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 
   &::before {
-    content: 'BPMN' !important;
-  }
-}
-
-.entry-bros {
-  &::before {
-    content: 'BROS' !important;
-  }
-}
-
-.entry-module {
-  &::before {
-    content: 'Module' !important;
-  }
-}
-
-.entry-message {
-  &::before {
-    content: 'Message' !important;
+    content: attr(data-title);
+    position: absolute;
+    top: 0.6rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -118,8 +104,38 @@ body {
   position: relative;
 }
 
+.container-stats {
+  z-index: 2;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  position: relative;
+  background-color: #fff;
+  border-bottom: solid 1px rgba(#000, 0.1);
+
+  div {
+    flex-grow: 1;
+    border-right: solid 1px rgba(#000, 0.1);
+    padding-bottom: 0.5rem;
+    padding-top: 1rem;
+
+    &::before {
+      content: attr(data-title);
+      padding-left: 0.5rem;
+    }
+
+    &:last-child {
+      border-right: none;
+    }
+
+    span {
+      display: block;
+    }
+  }
+}
+
 .container-header {
-  position: fixed;
+  position: sticky;
   top: 0;
   display: block;
   width: 100%;
@@ -153,7 +169,6 @@ body {
 }
 
 .container-body {
-  margin-top: 3rem;
   padding-top: 0.5rem;
 
   & > div {
