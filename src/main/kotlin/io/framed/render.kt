@@ -89,7 +89,8 @@ fun render(
         bpmn: ModelTree<BpmnElement>,
         bros: ModelTree<ModelElement<*>>,
         forceMatch: List<ForceMatch>,
-        results: List<Result>
+        results: List<Result>,
+        matchRounds: Int? = null
 ) {
     val tabVerifyHead: HTMLSpanElement
     val tabVerifyBody: HTMLDivElement
@@ -118,6 +119,7 @@ fun render(
                     field("Successful checks", "$matches of ${results.size}")
                     field("Errors", "$errors of ${results.size}")
                     field("Coverage", "${matches * 100 / results.size}%")
+                    field("Fixed point matching rounds", matchRounds ?: "Cannot find fixed point")
                 }
                 createView<HTMLDivElement> {
                     dataset["title"] = "BPMN matching stats"

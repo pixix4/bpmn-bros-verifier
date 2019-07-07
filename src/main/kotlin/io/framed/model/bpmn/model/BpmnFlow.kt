@@ -4,8 +4,10 @@ import io.framed.model.bpmn.xml.XmlElement
 
 class BpmnFlow(
         override val id: String,
-        val type: Type
+        val type: Type,
+        val name: String
 ) : BpmnElement {
+
 
     var sourceRef: String = ""
     var targetRef: String = ""
@@ -32,7 +34,7 @@ class BpmnFlow(
                 else -> Type.UNKNOWN
             }
 
-            val bpmn =  BpmnFlow(xml["id"], type)
+            val bpmn =  BpmnFlow(xml["id"], type, xml["name"])
 
             bpmn.sourceRef = xml["sourceRef"]
             bpmn.targetRef = xml["targetRef"]

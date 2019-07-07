@@ -59,7 +59,7 @@ fun init() {
 }
 
 fun generateBpmnTree(connections: List<ModelRelation<BpmnFlow>>, element: BpmnElement): ModelTree<BpmnElement> {
-    val children = if (element is BpmnElementGroup) {
+    val children = if (element is BpmnElementGroup && element !is BpmnLane) {
         element.content.filter { it !is BpmnFlow }.map { generateBpmnTree(connections, it) }
     } else emptyList()
 
@@ -125,9 +125,11 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatches: List<ForceMatch>) 
 
     console.log("--- bpmn ---")
     console.log(bpmnTree.log())
+    console.log(bpmnTree.asSequence().groupingBy { it.element }.eachCount().filterValues { it > 1 }.entries.map { it.key to it.value }.toTypedArray())
 
     console.log("--- bros ---")
     console.log(brosTree.log())
+    console.log(brosTree.asSequence().groupingBy { it.element }.eachCount().filterValues { it > 1 }.entries.map { it.key to it.value }.toTypedArray())
 
     console.log("--- force matching ---")
     console.log(forceMatches.toTypedArray())
@@ -141,7 +143,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatches: List<ForceMatch>) 
     for (m in context.matcherList) {
         matcher.register(m)
     }
-    matcher.match(forceMatches)
+    val matchRounds = matcher.match(forceMatches)
 
     val verifier = TreeVerifier(bpmnTree, brosTree)
     for (v in context.verifierList) {
@@ -149,7 +151,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatches: List<ForceMatch>) 
     }
     val results = verifier.verify()
 
-    render(bpmnTree, brosTree, forceMatches, results)
+    render(bpmnTree, brosTree, forceMatches, results, matchRounds)
 
 }
 
