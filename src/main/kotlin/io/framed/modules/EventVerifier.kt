@@ -10,10 +10,10 @@ import io.framed.model.bros.*
 
 @Suppress("UNCHECKED_CAST")
 fun Context.setupEvent() {
-    match<BpmnEvent, Event> { bpmn, bros ->
+    match<BpmnEvent, Event>("DefaultEventMatcher") { bpmn, bros ->
         matchStrings(bpmn.element.name, bros.element.desc) && !bpmn.element.terminationEvent
     }
-    match<BpmnEvent, ReturnEvent> { bpmn, bros ->
+    match<BpmnEvent, ReturnEvent>("ReturnEventMatcher") { bpmn, bros ->
         matchStrings(bpmn.element.name, bros.element.desc)
     }
 

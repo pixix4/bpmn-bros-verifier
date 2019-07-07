@@ -1,6 +1,7 @@
 package io.framed
 
 import io.framed.framework.ModelTree
+import io.framed.framework.matcher.ForceMatch
 import io.framed.framework.util.async
 import io.framed.framework.util.createView
 import io.framed.framework.verifier.Result
@@ -15,7 +16,7 @@ import org.w3c.dom.set
 import kotlin.browser.document
 import kotlin.dom.clear
 
-data class Entry(
+private data class Entry(
         val type: Type,
         val bpmn: ModelTree<BpmnElement>?,
         val bros: ModelTree<ModelElement<*>>?,
@@ -77,10 +78,17 @@ private fun HTMLElement.field(name: String, value: Any?, extra: Any? = null) {
     }
 }
 
+private fun Result.Type.transform() = when (this) {
+    Result.Type.MATCH -> Entry.Type.ACCEPT
+    Result.Type.ERROR -> Entry.Type.ERROR
+    Result.Type.IGNORE -> Entry.Type.WARN
+}
+
 @Suppress("UNCHECKED_CAST")
 fun render(
         bpmn: ModelTree<BpmnElement>,
         bros: ModelTree<ModelElement<*>>,
+        forceMatch: List<ForceMatch>,
         results: List<Result>
 ) {
     val tabVerifyHead: HTMLSpanElement
@@ -91,6 +99,9 @@ fun render(
 
     val tabBrosHead: HTMLSpanElement
     val tabBrosBody: HTMLDivElement
+
+    val tabForceHead: HTMLSpanElement
+    val tabForceBody: HTMLDivElement
 
     document.body!!.apply {
         clear()
@@ -161,6 +172,9 @@ fun render(
                 tabBrosHead = createView {
                     textContent = "BROS matching"
                 }
+                tabForceHead = createView {
+                    textContent = "Force matching"
+                }
             }
 
             createView<HTMLDivElement> {
@@ -190,12 +204,12 @@ fun render(
                         createView<HTMLDivElement> {
                             classList.add("entry-box")
 
-                            for (r in element.matchingElements) {
+                            for ((r, modules) in element.matchingElementsMap) {
                                 Entry(
                                         Entry.Type.INFO,
                                         element,
                                         r as ModelTree<ModelElement<*>>,
-                                        null,
+                                        modules.joinToString(", "),
                                         "Found name match"
                                 ).render(this)
                             }
@@ -217,12 +231,12 @@ fun render(
                         createView<HTMLDivElement> {
                             classList.add("entry-box")
 
-                            for (r in element.matchingElements) {
+                            for ((r, modules) in element.matchingElementsMap) {
                                 Entry(
                                         Entry.Type.INFO,
                                         r as ModelTree<BpmnElement>,
                                         element,
-                                        null,
+                                        modules.joinToString(", "),
                                         "Found name match"
                                 ).render(this)
                             }
@@ -239,11 +253,32 @@ fun render(
                         }
                     }
                 }
+                tabForceBody = createView {
+                    for (element in forceMatch) {
+                        createView<HTMLDivElement> {
+                            classList.add("entry-box")
+                            Entry(
+                                    when (element.type) {
+                                        ForceMatch.Type.MATCH -> Entry.Type.INFO
+                                        ForceMatch.Type.NOMATCH -> Entry.Type.WARN
+                                    },
+                                    bpmn.asSequence().firstOrNull {
+                                        it.element.id == element.bpmn
+                                    },
+                                    bros.asSequence().firstOrNull {
+                                        it.element.id == element.bros
+                                    },
+                                    "ForceMatcher",
+                                    "Add rule by manuel matching"
+                            ).render(this)
+                        }
+                    }
+                }
             }
         }
     }
 
-    val all = listOf(tabVerifyHead, tabVerifyBody, tabBpmnHead, tabBpmnBody, tabBrosHead, tabBrosBody)
+    val all = listOf(tabVerifyHead, tabVerifyBody, tabBpmnHead, tabBpmnBody, tabBrosHead, tabBrosBody, tabForceHead, tabForceBody)
 
     tabVerifyHead.addEventListener("click", EventListener {
         for (a in all) a.classList.remove("active")
@@ -263,10 +298,10 @@ fun render(
         tabBrosHead.classList.add("active")
         tabBrosBody.classList.add("active")
     })
-}
+    tabForceHead.addEventListener("click", EventListener {
+        for (a in all) a.classList.remove("active")
 
-private fun Result.Type.transform() = when (this) {
-    Result.Type.MATCH -> Entry.Type.ACCEPT
-    Result.Type.ERROR -> Entry.Type.ERROR
-    Result.Type.IGNORE -> Entry.Type.WARN
+        tabForceHead.classList.add("active")
+        tabForceBody.classList.add("active")
+    })
 }

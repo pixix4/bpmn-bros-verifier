@@ -14,7 +14,9 @@ class ModelTree<out T : Any>(
 
     val relations = mutableSetOf<ModelRelation<*>>()
 
-    val matchingElements = mutableSetOf<ModelTree<*>>()
+    val matchingElementsMap = mutableMapOf<ModelTree<*>, MutableSet<String>>()
+    val matchingElements: Set<ModelTree<*>>
+        get() = matchingElementsMap.keys
 
     inline fun <reified M> checkType(): Boolean {
         return element is M

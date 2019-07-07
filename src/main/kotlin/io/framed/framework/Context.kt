@@ -14,9 +14,21 @@ class Context {
     val verifierList: MutableList<Verifier> = mutableListOf()
 
     inline fun <reified Bpmn : BpmnElement, reified Bros : ModelElement<Bros>> match(
+            name: String? = null,
             crossinline matcher: (bpmn: ModelTree<Bpmn>, bros: ModelTree<Bros>) -> Boolean
     ) {
+
+        val bpmnName = Bpmn::class.simpleName
+        val brosName = Bros::class.simpleName
+
+        val matcherName: String?
+        if (bpmnName != null && brosName != null) {
+            matcherName = "$bpmnName${brosName}Matcher"
+        } else matcherName = null
+
         matcherList += object : Matcher {
+            override val name = name ?: matcherName ?: super.name
+
             override fun filterBpmn(bpmn: ModelTree<BpmnElement>) = bpmn.type == Bpmn::class
 
             override fun filterBros(bros: ModelTree<ModelElement<*>>) = bros.type == Bros::class
@@ -36,7 +48,9 @@ class Context {
     ) {
         verifierList += object : BpmnVerifier {
             override val name = name ?: super.name
+
             override val filter: Set<KClass<out BpmnElement>> = setOf(clazz)
+
             override fun verifyBpmn(element: ModelTree<BpmnElement>): Result {
                 @Suppress("UNCHECKED_CAST")
                 return verifier(element as ModelTree<Bpmn>)

@@ -33,11 +33,11 @@ fun main() {
 fun init() {
     var bros: BrosDocument? = null
     var bpmn: BpmnModel? = null
-    var forceMatch: List<ForceMatch>? = null
+    var forceMatches: List<ForceMatch>? = null
 
     fun check() {
-        if (bros != null && bpmn != null && forceMatch != null) {
-            verify(bros!!, bpmn!!, forceMatch!!)
+        if (bros != null && bpmn != null && forceMatches != null) {
+            verify(bros!!, bpmn!!, forceMatches!!)
         }
     }
 
@@ -53,7 +53,7 @@ fun init() {
     }
 
     loadAjaxFile("match.json") {
-        forceMatch = ForceMatch.parse(it)
+        forceMatches = ForceMatch.parse(it)
         check()
     }
 }
@@ -113,7 +113,7 @@ fun generateBrosTree(connections: List<ModelRelation<ModelConnection<*>>>, eleme
 }
 
 @Suppress("UnsafeCastFromDynamic")
-fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatch: List<ForceMatch>) {
+fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatches: List<ForceMatch>) {
     val bpmnTree: ModelTree<BpmnElement> = generateBpmnTree(
             bpmn.transitiveChildren().filterIsInstance<BpmnFlow>().map { ModelRelation(it, it::class) },
             bpmn
@@ -130,7 +130,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatch: List<ForceMatch>) {
     console.log(brosTree.log())
 
     console.log("--- force matching ---")
-    console.log(forceMatch.toTypedArray())
+    console.log(forceMatches.toTypedArray())
 
     val context = Context()
 
@@ -141,7 +141,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatch: List<ForceMatch>) {
     for (m in context.matcherList) {
         matcher.register(m)
     }
-    matcher.match(forceMatch)
+    matcher.match(forceMatches)
 
     val verifier = TreeVerifier(bpmnTree, brosTree)
     for (v in context.verifierList) {
@@ -149,7 +149,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatch: List<ForceMatch>) {
     }
     val results = verifier.verify()
 
-    render(bpmnTree, brosTree, results)
+    render(bpmnTree, brosTree, forceMatches, results)
 
 }
 
