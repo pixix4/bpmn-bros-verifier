@@ -14,7 +14,7 @@ class ModelTree<out T : Any>(
 
     val relations = mutableSetOf<ModelRelation<*>>()
 
-    val matchingElements = mutableListOf<ModelTree<*>>()
+    val matchingElements = mutableSetOf<ModelTree<*>>()
 
     inline fun <reified M> checkType(): Boolean {
         return element is M
@@ -65,5 +65,22 @@ class ModelTree<out T : Any>(
         is ModelElement<*> -> element.stringify()
         else -> element.toString()
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class.js != other::class.js) return false
+
+        other as ModelTree<*>
+
+        if (element != other.element) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return element.hashCode()
+    }
+
+
 }
 

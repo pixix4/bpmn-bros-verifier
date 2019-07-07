@@ -1,6 +1,7 @@
 package io.framed
 
 import io.framed.framework.ModelTree
+import io.framed.framework.util.async
 import io.framed.framework.util.createView
 import io.framed.framework.verifier.Result
 import io.framed.model.bpmn.model.BpmnElement
@@ -8,6 +9,7 @@ import io.framed.model.bros.ModelElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLSpanElement
+import org.w3c.dom.clipboard.Clipboard
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.set
 import kotlin.browser.document
@@ -26,8 +28,8 @@ data class Entry(
             classList.add("entry", "entry-${type.name.toLowerCase()}")
 
             createView<HTMLDivElement> {
-                field("BPMN", bpmn)
-                field("BROS", bros)
+                field("BPMN", bpmn, bpmn?.element?.id)
+                field("BROS", bros, bros?.element?.id)
                 field("Module", module)
             }
 
@@ -42,19 +44,37 @@ data class Entry(
     }
 }
 
-private fun HTMLElement.field(name: String, value: Any?) {
+private fun HTMLElement.field(name: String, value: Any?, extra: Any? = null) {
     createView<HTMLSpanElement> {
         classList.add("field")
-        textContent = value.fillEmpty()
+        textContent = value?.toString() ?: ""
         dataset["title"] = name
-    }
-}
+        if (extra != null) {
+            val str = extra.toString()
+            dataset["extra"] = "ID: $str"
+            classList.add("clickable")
+            title = "Click to copy ID"
 
-private fun Any?.fillEmpty(): String {
-    if (this == null) return " "
-    val str = toString()
-    if (str.isBlank()) return " "
-    return str
+            addEventListener("click", EventListener {
+                val clip = js("navigator.clipboard") as? Clipboard ?: return@EventListener
+                clip.writeText(str)
+
+                createView<HTMLSpanElement> {
+                    classList.add("tooltip")
+                    textContent = "Copied ID!"
+
+                    async(2000) {
+                        remove()
+                    }
+                    addEventListener("click", EventListener {
+                        it.stopPropagation()
+                        it.preventDefault()
+                        remove()
+                    })
+                }
+            })
+        }
+    }
 }
 
 @Suppress("UNCHECKED_CAST")

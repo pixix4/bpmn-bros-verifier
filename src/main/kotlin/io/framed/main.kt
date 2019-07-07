@@ -3,12 +3,11 @@ package io.framed
 import io.framed.framework.Context
 import io.framed.framework.ModelRelation
 import io.framed.framework.ModelTree
+import io.framed.framework.matcher.ForceMatch
 import io.framed.framework.matcher.TreeMatcher
 import io.framed.framework.util.BrosDocument
 import io.framed.framework.util.BrosParser
-import io.framed.framework.util.createHtmlView
 import io.framed.framework.util.loadAjaxFile
-import io.framed.framework.verifier.Result
 import io.framed.framework.verifier.TreeVerifier
 import io.framed.model.bpmn.ParseException
 import io.framed.model.bpmn.model.*
@@ -18,8 +17,6 @@ import io.framed.model.bros.ModelElement
 import io.framed.model.bros.ModelElementGroup
 import io.framed.modules.setupEvent
 import io.framed.modules.setupLane
-import org.w3c.dom.Element
-import kotlin.browser.document
 import kotlin.browser.window
 
 @Suppress("UNUSED")
@@ -36,10 +33,11 @@ fun main() {
 fun init() {
     var bros: BrosDocument? = null
     var bpmn: BpmnModel? = null
+    var forceMatch: List<ForceMatch>? = null
 
     fun check() {
-        if (bros != null && bpmn != null) {
-            verify(bros!!, bpmn!!)
+        if (bros != null && bpmn != null && forceMatch != null) {
+            verify(bros!!, bpmn!!, forceMatch!!)
         }
     }
 
@@ -51,6 +49,11 @@ fun init() {
 
     loadAjaxFile("restaurant.bpmn") {
         bpmn = BpmnParser.parse(it) ?: throw ParseException("model")
+        check()
+    }
+
+    loadAjaxFile("match.json") {
+        forceMatch = ForceMatch.parse(it)
         check()
     }
 }
@@ -110,7 +113,7 @@ fun generateBrosTree(connections: List<ModelRelation<ModelConnection<*>>>, eleme
 }
 
 @Suppress("UnsafeCastFromDynamic")
-fun verify(bros: BrosDocument, bpmn: BpmnModel) {
+fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatch: List<ForceMatch>) {
     val bpmnTree: ModelTree<BpmnElement> = generateBpmnTree(
             bpmn.transitiveChildren().filterIsInstance<BpmnFlow>().map { ModelRelation(it, it::class) },
             bpmn
@@ -126,6 +129,9 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel) {
     console.log("--- bros ---")
     console.log(brosTree.log())
 
+    console.log("--- force matching ---")
+    console.log(forceMatch.toTypedArray())
+
     val context = Context()
 
     context.setupLane()
@@ -135,7 +141,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel) {
     for (m in context.matcherList) {
         matcher.register(m)
     }
-    matcher.match()
+    matcher.match(forceMatch)
 
     val verifier = TreeVerifier(bpmnTree, brosTree)
     for (v in context.verifierList) {
@@ -155,9 +161,17 @@ fun ModelTree<BpmnElement>.containerName(): Pair<String, ModelTree<BpmnElement>>
         }
         is BpmnProcess -> {
             parent?.let { parent ->
-                parent.children.map { it.element }.filterIsInstance<BpmnCollaboration>().firstOrNull()?.let {
-                    it.content.filterIsInstance<BpmnParticipant>().firstOrNull { it.processRef == model.id }?.name?.let { it to this }
-                }
+                parent.children
+                        .map { it.element }
+                        .filterIsInstance<BpmnCollaboration>()
+                        .firstOrNull()
+                        ?.let { collaboration ->
+                            collaboration.content
+                                    .filterIsInstance<BpmnParticipant>()
+                                    .firstOrNull { it.processRef == model.id }
+                                    ?.name
+                                    ?.let { it to this }
+                        }
             }
         }
         else -> parent?.let { (it as ModelTree<BpmnElement>).containerName() }
