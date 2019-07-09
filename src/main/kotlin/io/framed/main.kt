@@ -37,7 +37,16 @@ fun init() {
 
     fun check() {
         if (bros != null && bpmn != null && forceMatches != null) {
-            verify(bros!!, bpmn!!, forceMatches!!)
+            val bpmnTree: ModelTree<BpmnElement> = generateBpmnTree(
+                    bpmn!!.transitiveChildren().filterIsInstance<BpmnFlow>().map { ModelRelation(it, it::class) },
+                    bpmn!!
+            )
+            val brosTree: ModelTree<ModelElement<*>> = generateBrosTree(
+                    bros!!.connections.connections.map { ModelRelation(it, it::class) },
+                    bros!!.root
+            )
+
+            verify(bpmnTree, brosTree,true, forceMatches!!)
         }
     }
 
@@ -113,15 +122,20 @@ fun generateBrosTree(connections: List<ModelRelation<ModelConnection<*>>>, eleme
 }
 
 @Suppress("UnsafeCastFromDynamic")
-fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatches: List<ForceMatch>) {
-    val bpmnTree: ModelTree<BpmnElement> = generateBpmnTree(
-            bpmn.transitiveChildren().filterIsInstance<BpmnFlow>().map { ModelRelation(it, it::class) },
-            bpmn
-    )
-    val brosTree: ModelTree<ModelElement<*>> = generateBrosTree(
-            bros.connections.connections.map { ModelRelation(it, it::class) },
-            bros.root
-    )
+fun verify(
+        bpmnTree: ModelTree<BpmnElement>,
+        brosTree: ModelTree<ModelElement<*>>,
+        useForceMatches: Boolean,
+        forceMatches: List<ForceMatch>
+) {
+    for (element in bpmnTree.asSequence()) {
+        element.matchingElementsMap.clear()
+    }
+    for (element in brosTree.asSequence()) {
+        element.matchingElementsMap.clear()
+    }
+
+    val useMatches = if (useForceMatches) forceMatches else emptyList()
 
     console.log("--- bpmn ---")
     console.log(bpmnTree.log())
@@ -132,7 +146,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatches: List<ForceMatch>) 
     console.log(brosTree.asSequence().groupingBy { it.element }.eachCount().filterValues { it > 1 }.entries.map { it.key to it.value }.toTypedArray())
 
     console.log("--- force matching ---")
-    console.log(forceMatches.toTypedArray())
+    console.log(useMatches.toTypedArray())
 
     val context = Context()
 
@@ -143,7 +157,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatches: List<ForceMatch>) 
     for (m in context.matcherList) {
         matcher.register(m)
     }
-    val matchRounds = matcher.match(forceMatches)
+    val matchRounds = matcher.match(useMatches)
 
     val verifier = TreeVerifier(bpmnTree, brosTree)
     for (v in context.verifierList) {
@@ -151,7 +165,7 @@ fun verify(bros: BrosDocument, bpmn: BpmnModel, forceMatches: List<ForceMatch>) 
     }
     val results = verifier.verify()
 
-    render(bpmnTree, brosTree, forceMatches, results, matchRounds)
+    render(bpmnTree, brosTree, useForceMatches, forceMatches, results, matchRounds)
 
 }
 

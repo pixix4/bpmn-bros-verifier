@@ -1,8 +1,7 @@
 package io.framed.framework.util
 
 import de.westermann.kobserve.event.EventHandler
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
 import org.w3c.files.FileReader
@@ -22,6 +21,30 @@ import kotlin.contracts.contract
  * @return Dash cased string.
  */
 fun String.toDashCase() = this.replace("([a-z])([A-Z])".toRegex(), "$1-$2").toLowerCase()
+
+operator fun HTMLCollection.iterator() = object : Iterator<HTMLElement> {
+    private var index = 0
+    override fun hasNext(): Boolean {
+        return index < this@iterator.length
+    }
+
+    override fun next(): HTMLElement {
+        return this@iterator.get(index++) as HTMLElement
+    }
+
+}
+
+operator fun NodeList.iterator() = object : Iterator<Node> {
+    private var index = 0
+    override fun hasNext(): Boolean {
+        return index < this@iterator.length
+    }
+
+    override fun next(): Node {
+        return this@iterator.get(index++)!!
+    }
+
+}
 
 /**
  * Apply current dom changes and recalculate all sizes. Executes the given block afterwards.

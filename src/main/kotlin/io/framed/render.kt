@@ -4,15 +4,13 @@ import io.framed.framework.ModelTree
 import io.framed.framework.matcher.ForceMatch
 import io.framed.framework.util.async
 import io.framed.framework.util.createView
+import io.framed.framework.util.iterator
 import io.framed.framework.verifier.Result
 import io.framed.model.bpmn.model.BpmnElement
 import io.framed.model.bros.ModelElement
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLSpanElement
+import org.w3c.dom.*
 import org.w3c.dom.clipboard.Clipboard
 import org.w3c.dom.events.EventListener
-import org.w3c.dom.set
 import kotlin.browser.document
 import kotlin.dom.clear
 
@@ -25,6 +23,8 @@ private data class Entry(
 ) {
 
     fun render(element: HTMLElement) = with(element) {
+        element.classList.add("contains-${type.name.toLowerCase()}")
+
         createView<HTMLDivElement> {
             classList.add("entry", "entry-${type.name.toLowerCase()}")
 
@@ -78,17 +78,59 @@ private fun HTMLElement.field(name: String, value: Any?, extra: Any? = null) {
     }
 }
 
+private fun HTMLElement.feature(default: Boolean, name: String, setup: HTMLElement.() -> Unit = {}, onChange: (value: Boolean) -> Unit) {
+    val inputName = name
+            .replace("([a-z])([A-Z])".toRegex(), "$1-$2")
+            .toLowerCase()
+            .replace(" +".toRegex(), "-")
+    console.log(inputName)
+    createView<HTMLDivElement> {
+        classList.add("feature")
+        createView<HTMLInputElement> {
+            type = "checkbox"
+            this.name = inputName
+            id = inputName
+            checked = default
+
+            addEventListener("change", EventListener {
+                onChange(checked)
+            })
+        }
+        createView<HTMLLabelElement> {
+            htmlFor = inputName
+            textContent = name
+        }
+
+        setup()
+    }
+}
+
 private fun Result.Type.transform() = when (this) {
     Result.Type.MATCH -> Entry.Type.ACCEPT
     Result.Type.ERROR -> Entry.Type.ERROR
     Result.Type.IGNORE -> Entry.Type.WARN
 }
 
+object FeatureState {
+    var showErrors = true
+    var showWarnings = true
+    var showInfos = true
+    var showSuccessful = true
+
+    fun update(element: HTMLElement) {
+        element.classList.toggle("hide-error", !showErrors)
+        element.classList.toggle("hide-warn", !showWarnings)
+        element.classList.toggle("hide-info", !showInfos)
+        element.classList.toggle("hide-accept", !showSuccessful)
+    }
+}
+
 @Suppress("UNCHECKED_CAST")
 fun render(
         bpmn: ModelTree<BpmnElement>,
         bros: ModelTree<ModelElement<*>>,
-        forceMatch: List<ForceMatch>,
+        useForceMatches: Boolean,
+        forceMatches: List<ForceMatch>,
         results: List<Result>,
         matchRounds: Int? = null
 ) {
@@ -106,8 +148,9 @@ fun render(
 
     document.body!!.apply {
         clear()
-        createView<HTMLDivElement> {
+        createView<HTMLDivElement> container@{
             classList.add("container")
+            FeatureState.update(this)
 
             createView<HTMLDivElement> {
                 classList.add("container-stats")
@@ -158,6 +201,30 @@ fun render(
                     field("Unmatched elements", "${count - matches} of $count")
                     field("Multiple matches", doubles)
                     field("Coverage", "${matches * 100 / count}%")
+                }
+                createView<HTMLDivElement> {
+                    dataset["title"] = "Features"
+
+                    feature(useForceMatches, "Use force matching") {
+                        this@container.clear()
+                        verify(bpmn, bros, it, forceMatches)
+                    }
+                    feature(FeatureState.showErrors, "Show errors") {
+                        FeatureState.showErrors = it
+                        FeatureState.update(this@container)
+                    }
+                    feature(FeatureState.showWarnings, "Show warnings") {
+                        FeatureState.showWarnings = it
+                        FeatureState.update(this@container)
+                    }
+                    feature(FeatureState.showInfos, "Show infos") {
+                        FeatureState.showInfos = it
+                        FeatureState.update(this@container)
+                    }
+                    feature(FeatureState.showSuccessful, "Show successful") {
+                        FeatureState.showSuccessful = it
+                        FeatureState.update(this@container)
+                    }
                 }
             }
 
@@ -256,7 +323,7 @@ fun render(
                     }
                 }
                 tabForceBody = createView {
-                    for (element in forceMatch) {
+                    for (element in forceMatches) {
                         createView<HTMLDivElement> {
                             classList.add("entry-box")
                             Entry(
