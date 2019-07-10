@@ -46,7 +46,7 @@ fun init() {
                     bros!!.root
             )
 
-            verify(bpmnTree, brosTree,true, forceMatches!!)
+            verify(bpmnTree, brosTree, true, forceMatches!!)
         }
     }
 
@@ -135,7 +135,17 @@ fun verify(
         element.matchingElementsMap.clear()
     }
 
-    val useMatches = if (useForceMatches) forceMatches else emptyList()
+    @Suppress("NAME_SHADOWING") val forceMatches =
+            forceMatches.foldRight(emptyList<ForceMatch>()) { forceMatch, acc ->
+                if (acc.firstOrNull { it.bpmn == forceMatch.bpmn && it.bros == forceMatch.bros } == null) {
+                    listOf(forceMatch) + acc
+                } else {
+                    acc
+                }
+            }
+
+
+    val useMatches: List<ForceMatch> = if (useForceMatches) forceMatches else emptyList()
 
     console.log("--- bpmn ---")
     console.log(bpmnTree.log())

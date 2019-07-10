@@ -102,6 +102,30 @@ body {
     padding-right: 1rem;
     padding-left: 2rem;
   }
+
+  .delete {
+    @include no-select();
+
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: opacity 0.2s;
+    width: 2rem;
+    height: 2rem;
+    opacity: 0.54;
+    padding: 0;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    i {
+      width: 2rem;
+      text-align: center;
+      line-height: 2rem;
+      height: 2rem;
+    }
+  }
 }
 
 .field {
@@ -111,6 +135,7 @@ body {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
   cursor: default;
+  min-width: 4rem;
 
   &.clickable {
     cursor: pointer;
@@ -303,6 +328,7 @@ $levels: "error", "warn", "info", "accept";
     padding: 0 1rem;
     position: relative;
     cursor: pointer;
+    float: left;
     @include no-select();
 
     &.active::before {
@@ -314,6 +340,10 @@ $levels: "error", "warn", "info", "accept";
       right: 1rem;
       height: 0.1rem;
       background-color: rgba(#000, 0.5);
+    }
+
+    &.right {
+      float: right;
     }
   }
 }
@@ -339,6 +369,7 @@ $levels: "error", "warn", "info", "accept";
   input {
     display: none;
   }
+
   label {
     position: relative;
     display: inline-block;
@@ -347,6 +378,7 @@ $levels: "error", "warn", "info", "accept";
     text-align: left;
     padding: 6px 0 6px 44px;
   }
+
   label:before, label:after {
     content: "";
     position: absolute;
@@ -359,6 +391,7 @@ $levels: "error", "warn", "info", "accept";
     -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
   }
+
   label:before {
     left: 1px;
     width: 26px;
@@ -366,6 +399,7 @@ $levels: "error", "warn", "info", "accept";
     background-color: #9E9E9E;
     border-radius: 5px;
   }
+
   label:after {
     left: 0;
     width: 16px;
@@ -374,13 +408,58 @@ $levels: "error", "warn", "info", "accept";
     border-radius: 50%;
     box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.14), 0 2px 2px 0 rgba(0, 0, 0, 0.098), 0 1px 5px 0 rgba(0, 0, 0, 0.084);
   }
+
   input:checked + label:before {
     background-color: #A5D6A7;
   }
+
   input:checked + label:after {
     background-color: #4CAF50;
     -ms-transform: translate(80%, -50%);
     -webkit-transform: translate(80%, -50%);
     transform: translate(80%, -50%);
+  }
+}
+
+.selection {
+  position: fixed;
+  bottom: -5rem;
+  line-height: 2rem;
+  border-radius: 0.2rem;
+  background-color: #fff;
+  border: solid 1px rgba(#000, 0.4);
+  box-shadow: 0 1px 4px rgba(#000, 0.3);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  z-index: 5;
+  padding: 0.8rem 1rem 1rem;
+  transition: bottom 0.2s;
+
+  &.active {
+    bottom: -0.2rem;
+  }
+
+  * {
+    display: block;
+    margin-right: 1rem;
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+
+  .field {
+    padding-top: 1rem;
+    margin-top: -0.5rem;
+    margin-bottom: -2rem;
+    width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &::before, &::after {
+      top: 0;
+    }
   }
 }

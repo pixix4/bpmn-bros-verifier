@@ -19,5 +19,10 @@ data class ForceMatch(
             @Suppress("EXPERIMENTAL_API_USAGE")
             return Json.nonstrict.parse(serializer().list, data)
         }
+
+        fun stringify(list: List<ForceMatch>): String {
+            @Suppress("EXPERIMENTAL_API_USAGE")
+            return Json.indented.stringify(serializer().list, list)
+        }
     }
 }

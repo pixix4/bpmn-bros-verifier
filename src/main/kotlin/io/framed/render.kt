@@ -1,10 +1,12 @@
 package io.framed
 
+import de.westermann.kobserve.event.emit
+import de.westermann.kobserve.event.subscribe
 import io.framed.framework.ModelTree
 import io.framed.framework.matcher.ForceMatch
 import io.framed.framework.util.async
 import io.framed.framework.util.createView
-import io.framed.framework.util.iterator
+import io.framed.framework.util.triggerDownload
 import io.framed.framework.verifier.Result
 import io.framed.model.bpmn.model.BpmnElement
 import io.framed.model.bros.ModelElement
@@ -12,7 +14,11 @@ import org.w3c.dom.*
 import org.w3c.dom.clipboard.Clipboard
 import org.w3c.dom.events.EventListener
 import kotlin.browser.document
+import kotlin.browser.window
 import kotlin.dom.clear
+import kotlin.properties.Delegates
+import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.KProperty
 
 private data class Entry(
         val type: Type,
@@ -22,7 +28,7 @@ private data class Entry(
         val message: String
 ) {
 
-    fun render(element: HTMLElement) = with(element) {
+    fun render(element: HTMLElement, onDelete: (() -> Unit)? = null) = with(element) {
         element.classList.add("contains-${type.name.toLowerCase()}")
 
         createView<HTMLDivElement> {
@@ -37,6 +43,20 @@ private data class Entry(
             createView<HTMLDivElement> {
                 field("Message", message)
             }
+
+            if (onDelete != null) {
+                createView<HTMLDivElement> {
+                    classList.add("delete")
+                    createView<HTMLElement>("i") {
+                        classList.add("material-icons")
+                        textContent = "clear"
+                    }
+
+                    addEventListener("click", EventListener {
+                        onDelete()
+                    })
+                }
+            }
         }
     }
 
@@ -45,8 +65,8 @@ private data class Entry(
     }
 }
 
-private fun HTMLElement.field(name: String, value: Any?, extra: Any? = null) {
-    createView<HTMLSpanElement> {
+private fun HTMLElement.field(name: String, value: Any?, extra: Any? = null): HTMLElement {
+    return createView<HTMLSpanElement> {
         classList.add("field")
         textContent = value?.toString() ?: ""
         dataset["title"] = name
@@ -59,6 +79,12 @@ private fun HTMLElement.field(name: String, value: Any?, extra: Any? = null) {
             addEventListener("click", EventListener {
                 val clip = js("navigator.clipboard") as? Clipboard ?: return@EventListener
                 clip.writeText(str)
+
+                if (name.equals("bpmn", true)) {
+                    emit(CopyBpmnId(extra.toString(), value?.toString()))
+                } else if (name.equals("bros", true)) {
+                    emit(CopyBrosId(extra.toString().toLongOrNull(), value?.toString()))
+                }
 
                 createView<HTMLSpanElement> {
                     classList.add("tooltip")
@@ -83,7 +109,6 @@ private fun HTMLElement.feature(default: Boolean, name: String, setup: HTMLEleme
             .replace("([a-z])([A-Z])".toRegex(), "$1-$2")
             .toLowerCase()
             .replace(" +".toRegex(), "-")
-    console.log(inputName)
     createView<HTMLDivElement> {
         classList.add("feature")
         createView<HTMLInputElement> {
@@ -112,10 +137,29 @@ private fun Result.Type.transform() = when (this) {
 }
 
 object FeatureState {
-    var showErrors = true
-    var showWarnings = true
-    var showInfos = true
-    var showSuccessful = true
+    var showErrors by Delegates.observable(true, this::save)
+    var showWarnings by Delegates.observable(true, this::save)
+    var showInfos by Delegates.observable(true, this::save)
+    var showSuccessful by Delegates.observable(true, this::save)
+    var tab by Delegates.observable(0, this::save)
+
+    private fun <T : Any> save(property: KProperty<*>, oldValue: T, newValue: T) {
+        if (newValue != oldValue) {
+            window.localStorage["bbv-" + property.name] = newValue.toString()
+        }
+    }
+
+    private inline fun <reified T : Any> load(property: KMutableProperty0<T>) {
+        val value = window.localStorage["bbv-" + property.name] ?: return
+        val h: T = when (T::class) {
+            Boolean::class -> value.toBoolean()
+            Int::class -> value.toIntOrNull()
+            else -> null
+        } as? T ?: return
+        if (property.get() != h) {
+            property.set(h)
+        }
+    }
 
     fun update(element: HTMLElement) {
         element.classList.toggle("hide-error", !showErrors)
@@ -123,7 +167,18 @@ object FeatureState {
         element.classList.toggle("hide-info", !showInfos)
         element.classList.toggle("hide-accept", !showSuccessful)
     }
+
+    init {
+        load(this::showErrors)
+        load(this::showWarnings)
+        load(this::showInfos)
+        load(this::showSuccessful)
+        load(this::tab)
+    }
 }
+
+data class CopyBpmnId(val id: String?, val name: String? = null)
+data class CopyBrosId(val id: Long?, val name: String? = null)
 
 @Suppress("UNCHECKED_CAST")
 fun render(
@@ -148,6 +203,74 @@ fun render(
 
     document.body!!.apply {
         clear()
+
+        createView<HTMLDivElement> selection@{
+            classList.add("selection")
+
+            createView<HTMLElement>("i") {
+                classList.add("material-icons")
+                textContent = "clear"
+
+                addEventListener("click", EventListener {
+                    this@selection.classList.remove("active")
+                })
+            }
+
+            val bpmnField = field("BPMN", "").apply {
+                subscribe<CopyBpmnId> {
+                    if (it.id != null) {
+                        this@selection.classList.add("active")
+                    }
+                    textContent = it.name ?: " "
+                    dataset["extra"] = it.id?.let { "ID: $it" } ?: ""
+                    dataset["id"] = it.id ?: ""
+                }
+            }
+
+            val brosField = field("BROS", "").apply {
+                subscribe<CopyBrosId> {
+                    if (it.id != null) {
+                        this@selection.classList.add("active")
+                    }
+                    textContent = it.name ?: " "
+                    dataset["extra"] = it.id?.let { "ID: $it" } ?: ""
+                    dataset["id"] = it.id?.toString() ?: ""
+                }
+            }
+
+            val select = createView<HTMLSelectElement> {
+                createView<HTMLOptionElement> {
+                    textContent = "match"
+                }
+                createView<HTMLOptionElement> {
+                    textContent = "nomatch"
+                }
+            }
+
+            createView<HTMLButtonElement> {
+                textContent = "Create"
+                addEventListener("click", EventListener {
+                    this@selection.classList.remove("active")
+
+                    val match = ForceMatch(
+                            bpmnField.dataset["id"] ?: return@EventListener,
+                            brosField.dataset["id"]?.toLongOrNull() ?: return@EventListener,
+                            if (select.selectedIndex == 0) ForceMatch.Type.MATCH else ForceMatch.Type.NOMATCH
+                    )
+
+                    verify(bpmn, bros, useForceMatches, forceMatches + match)
+                })
+
+                val updateState = { _: Any ->
+                    disabled = bpmnField.dataset["id"].isNullOrBlank() || brosField.dataset["id"].isNullOrBlank()
+                }
+                subscribe<CopyBpmnId>(updateState)
+                subscribe<CopyBrosId>(updateState)
+
+                updateState(Unit)
+            }
+        }
+
         createView<HTMLDivElement> container@{
             classList.add("container")
             FeatureState.update(this)
@@ -159,6 +282,7 @@ fun render(
                     dataset["title"] = "Verification stats"
                     val matches = results.count { it.type == Result.Type.MATCH }
                     val errors = results.count { it.type == Result.Type.ERROR }
+
                     field("Successful checks", "$matches of ${results.size}")
                     field("Errors", "$errors of ${results.size}")
                     field("Coverage", "${matches * 100 / results.size}%")
@@ -232,7 +356,6 @@ fun render(
                 classList.add("container-header")
 
                 tabVerifyHead = createView {
-                    classList.add("active")
                     textContent = "Verify result"
                 }
                 tabBpmnHead = createView {
@@ -244,14 +367,20 @@ fun render(
                 tabForceHead = createView {
                     textContent = "Force matching"
                 }
+                createView<HTMLSpanElement> {
+                    classList.add("right")
+                    textContent = "Export force matches"
+
+                    addEventListener("click", EventListener {
+                        triggerDownload("match.json", ForceMatch.stringify(forceMatches))
+                    })
+                }
             }
 
             createView<HTMLDivElement> {
                 classList.add("container-body")
 
                 tabVerifyBody = createView {
-                    classList.add("active")
-
                     for ((_, l) in results.groupBy { it.verifier }) {
                         createView<HTMLDivElement> {
                             classList.add("entry-box")
@@ -328,8 +457,8 @@ fun render(
                             classList.add("entry-box")
                             Entry(
                                     when (element.type) {
-                                        ForceMatch.Type.MATCH -> Entry.Type.INFO
-                                        ForceMatch.Type.NOMATCH -> Entry.Type.WARN
+                                        ForceMatch.Type.MATCH -> Entry.Type.ACCEPT
+                                        ForceMatch.Type.NOMATCH -> Entry.Type.ERROR
                                     },
                                     bpmn.asSequence().firstOrNull {
                                         it.element.id == element.bpmn
@@ -339,7 +468,9 @@ fun render(
                                     },
                                     "ForceMatcher",
                                     "Add rule by manuel matching"
-                            ).render(this)
+                            ).render(this) {
+                                verify(bpmn, bros, useForceMatches, forceMatches - element)
+                            }
                         }
                     }
                 }
@@ -347,30 +478,19 @@ fun render(
         }
     }
 
-    val all = listOf(tabVerifyHead, tabVerifyBody, tabBpmnHead, tabBpmnBody, tabBrosHead, tabBrosBody, tabForceHead, tabForceBody)
+    val header = listOf(tabVerifyHead, tabBpmnHead, tabBrosHead, tabForceHead)
+    val body = listOf(tabVerifyBody, tabBpmnBody, tabBrosBody, tabForceBody)
 
-    tabVerifyHead.addEventListener("click", EventListener {
-        for (a in all) a.classList.remove("active")
+    for ((index, head) in header.withIndex()) {
+        head.addEventListener("click", EventListener {
+            header.forEach { it.classList.remove("active") }
+            body.forEach { it.classList.remove("active") }
 
-        tabVerifyHead.classList.add("active")
-        tabVerifyBody.classList.add("active")
-    })
-    tabBpmnHead.addEventListener("click", EventListener {
-        for (a in all) a.classList.remove("active")
+            header[index].classList.add("active")
+            body[index].classList.add("active")
+            FeatureState.tab = index
+        })
+    }
 
-        tabBpmnHead.classList.add("active")
-        tabBpmnBody.classList.add("active")
-    })
-    tabBrosHead.addEventListener("click", EventListener {
-        for (a in all) a.classList.remove("active")
-
-        tabBrosHead.classList.add("active")
-        tabBrosBody.classList.add("active")
-    })
-    tabForceHead.addEventListener("click", EventListener {
-        for (a in all) a.classList.remove("active")
-
-        tabForceHead.classList.add("active")
-        tabForceBody.classList.add("active")
-    })
+    header[FeatureState.tab].click()
 }
