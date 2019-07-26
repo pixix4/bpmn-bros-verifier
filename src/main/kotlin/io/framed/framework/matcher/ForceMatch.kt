@@ -5,7 +5,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
 
 @Serializable
-data class ForceMatch(
+data class PredefinedMatch(
         val bpmn: String,
         val bros: Long,
         val type: Type
@@ -15,14 +15,26 @@ data class ForceMatch(
     }
 
     companion object {
-        fun parse(data: String): List<ForceMatch> {
+        fun parse(data: String): List<PredefinedMatch> {
             @Suppress("EXPERIMENTAL_API_USAGE")
-            return Json.nonstrict.parse(serializer().list, data)
+            return Json.nonstrict.parse(serializer().list, data).foldRight(emptyList<PredefinedMatch>()) { predefinedMatch, acc ->
+                if (acc.firstOrNull { it.bpmn == predefinedMatch.bpmn && it.bros == predefinedMatch.bros } == null) {
+                    listOf(predefinedMatch) + acc
+                } else {
+                    acc
+                }
+            }
         }
 
-        fun stringify(list: List<ForceMatch>): String {
+        fun stringify(list: List<PredefinedMatch>): String {
             @Suppress("EXPERIMENTAL_API_USAGE")
-            return Json.indented.stringify(serializer().list, list)
+            return Json.indented.stringify(serializer().list, list.foldRight(emptyList<PredefinedMatch>()) { predefinedMatch, acc ->
+                if (acc.firstOrNull { it.bpmn == predefinedMatch.bpmn && it.bros == predefinedMatch.bros } == null) {
+                    listOf(predefinedMatch) + acc
+                } else {
+                    acc
+                }
+            })
         }
     }
 }

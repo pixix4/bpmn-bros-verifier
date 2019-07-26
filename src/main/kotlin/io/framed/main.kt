@@ -1,23 +1,24 @@
 package io.framed
 
-import io.framed.framework.Context
 import io.framed.framework.ModelRelation
 import io.framed.framework.ModelTree
-import io.framed.framework.matcher.ForceMatch
-import io.framed.framework.matcher.TreeMatcher
-import io.framed.framework.util.BrosDocument
-import io.framed.framework.util.BrosParser
-import io.framed.framework.util.loadAjaxFile
-import io.framed.framework.verifier.TreeVerifier
+import io.framed.framework.matcher.PredefinedMatch
+import io.framed.framework.util.*
 import io.framed.model.bpmn.ParseException
-import io.framed.model.bpmn.model.*
+import io.framed.model.bpmn.model.BpmnElement
+import io.framed.model.bpmn.model.BpmnFlow
+import io.framed.model.bpmn.model.BpmnModel
+import io.framed.model.bpmn.model.transitiveChildren
 import io.framed.model.bpmn.xml.BpmnParser
-import io.framed.model.bros.ModelConnection
 import io.framed.model.bros.ModelElement
-import io.framed.model.bros.ModelElementGroup
-import io.framed.modules.setupEvent
-import io.framed.modules.setupLane
+import org.w3c.dom.*
+import org.w3c.dom.events.EventListener
+import org.w3c.files.File
+import org.w3c.files.FileReader
+import org.w3c.files.get
+import kotlin.browser.document
 import kotlin.browser.window
+import kotlin.dom.clear
 
 @Suppress("UNUSED")
 fun main() {
@@ -31,175 +32,274 @@ fun main() {
  * Startup the application
  */
 fun init() {
+    val bpmnFile = FileObject(
+            "BPMN",
+            transform = { content ->
+                val bpmn = BpmnParser.parse(content) ?: throw ParseException("model")
+                generateBpmnTree(
+                        bpmn.transitiveChildren().filterIsInstance<BpmnFlow>().map { ModelRelation(it, it::class) },
+                        bpmn
+                )
+            },
+            count = {
+                it.asSequence().count()
+            }
+    )
+
+    val brosFile = FileObject(
+            "BROS",
+            transform = { content ->
+                val bros = BrosParser.parse(content) ?: throw ParseException("bros")
+                generateBrosTree(
+                        bros.connections.connections.map { ModelRelation(it, it::class) },
+                        bros.root
+                )
+            },
+            count = {
+                it.asSequence().count()
+            }
+    )
+    val predefinedFile = FileObject(
+            "Predefined matching",
+            transform = { content ->
+                PredefinedMatch.parse(content)
+            },
+            count = {
+                it.size
+            }
+    )
+
+    val application = mainUi(bpmnFile, brosFile, predefinedFile)
+
     var bros: BrosDocument? = null
+    var brosContent = ""
     var bpmn: BpmnModel? = null
-    var forceMatches: List<ForceMatch>? = null
+    var bpmnContent = ""
+    var predefinedMatches: List<PredefinedMatch>? = null
+    var predefinedMatchesContent = ""
 
     fun check() {
-        if (bros != null && bpmn != null && forceMatches != null) {
-            val bpmnTree: ModelTree<BpmnElement> = generateBpmnTree(
-                    bpmn!!.transitiveChildren().filterIsInstance<BpmnFlow>().map { ModelRelation(it, it::class) },
-                    bpmn!!
-            )
-            val brosTree: ModelTree<ModelElement<*>> = generateBrosTree(
-                    bros!!.connections.connections.map { ModelRelation(it, it::class) },
-                    bros!!.root
-            )
+        if (bros != null && bpmn != null && predefinedMatches != null) {
+            application.createView<HTMLButtonElement>("load-demo") {
+                textContent = "Load demo"
 
-            verify(bpmnTree, brosTree, true, forceMatches!!)
+                addEventListener("click", EventListener {
+                    bpmnFile.load(bpmnContent)
+                    brosFile.load(brosContent)
+                    predefinedFile.load(predefinedMatchesContent)
+                })
+            }
         }
     }
 
 
     loadAjaxFile("restaurant.json") {
         bros = BrosParser.parse(it) ?: throw ParseException("bros")
+        brosContent = it
         check()
     }
 
     loadAjaxFile("restaurant.bpmn") {
         bpmn = BpmnParser.parse(it) ?: throw ParseException("model")
+        bpmnContent = it
         check()
     }
 
     loadAjaxFile("match.json") {
-        forceMatches = ForceMatch.parse(it)
+        predefinedMatches = PredefinedMatch.parse(it)
+        predefinedMatchesContent = it
         check()
     }
 }
 
-fun generateBpmnTree(connections: List<ModelRelation<BpmnFlow>>, element: BpmnElement): ModelTree<BpmnElement> {
-    val children = if (element is BpmnElementGroup && element !is BpmnLane) {
-        element.content.filter { it !is BpmnFlow }.map { generateBpmnTree(connections, it) }
-    } else emptyList()
+fun mainUi(bpmnFile: FileObject<ModelTree<BpmnElement>>, brosFile: FileObject<ModelTree<ModelElement<*>>>, predefinedFile: FileObject<List<PredefinedMatch>>): HTMLElement {
+    var resultPage: HTMLDivElement = js("{}")
+    var verifyArrow: HTMLDivElement = js("{}")
 
-    val tree = ModelTree(
-            null,
-            element,
-            element::class,
-            children
-    )
-
-    tree.children.forEach { it.parent = tree }
-
-    for (connection in connections) {
-        if (element.id == connection.relation.sourceRef) {
-            tree.relations += connection
-            connection.target = tree
-        } else if (element.id == connection.relation.targetRef) {
-            tree.relations += connection
-            connection.source = tree
+    fun checkButtonState() {
+        if (bpmnFile.element == null || brosFile.element == null) {
+            resultPage.clear()
+            verifyArrow.classList.remove("active")
+        } else {
+            verify(
+                    resultPage,
+                    bpmnFile.element!!,
+                    brosFile.element!!,
+                    predefinedFile.element ?: emptyList()
+            ) {
+                predefinedFile.load(PredefinedMatch.stringify(it))
+            }
+            verifyArrow.classList.add("active")
         }
     }
 
-    return tree
-}
+    bpmnFile.onUpdate = ::checkButtonState
+    brosFile.onUpdate = ::checkButtonState
+    predefinedFile.onUpdate = ::checkButtonState
 
-fun generateBrosTree(connections: List<ModelRelation<ModelConnection<*>>>, element: ModelElement<*>): ModelTree<ModelElement<*>> {
-    val children = if (element is ModelElementGroup<*>) {
-        element.children.map { generateBrosTree(connections, it) }
-    } else emptyList()
+    var application: HTMLDivElement = js("{}")
 
-    val tree = ModelTree(
-            null,
-            element,
-            element::class,
-            children
-    )
-
-    tree.children.forEach { it.parent = tree }
-
-    for (connection in connections) {
-        if (element.id == connection.relation.sourceId) {
-            tree.relations += connection
-            connection.target = tree
-        } else if (element.id == connection.relation.targetId) {
-            tree.relations += connection
-            connection.source = tree
+    fun loadFile(file: File) {
+        file.load {
+            when {
+                bpmnFile.testFile(it) -> bpmnFile.load(it)
+                brosFile.testFile(it) -> brosFile.load(it)
+                predefinedFile.testFile(it) -> predefinedFile.load(it)
+            }
         }
     }
 
-    return tree
-}
+    document.body!!.apply {
+        clear()
 
-@Suppress("UnsafeCastFromDynamic")
-fun verify(
-        bpmnTree: ModelTree<BpmnElement>,
-        brosTree: ModelTree<ModelElement<*>>,
-        useForceMatches: Boolean,
-        forceMatches: List<ForceMatch>
-) {
-    for (element in bpmnTree.asSequence()) {
-        element.matchingElementsMap.clear()
-    }
-    for (element in brosTree.asSequence()) {
-        element.matchingElementsMap.clear()
-    }
-
-    @Suppress("NAME_SHADOWING") val forceMatches =
-            forceMatches.foldRight(emptyList<ForceMatch>()) { forceMatch, acc ->
-                if (acc.firstOrNull { it.bpmn == forceMatch.bpmn && it.bros == forceMatch.bros } == null) {
-                    listOf(forceMatch) + acc
-                } else {
-                    acc
+        application = createView("application") {
+            createView<HTMLDivElement>("start-page") {
+                createView<HTMLDivElement>("start-header") {
+                    createView<HTMLHeadingElement>(tag = "h1").textContent = "BPMN-BROS-Verifier"
+                    createView<HTMLSpanElement>().textContent = "Select bpmn and bros file to start verification"
                 }
+                createView<HTMLDivElement>("start-files") {
+                    appendChild(bpmnFile.view)
+                    appendChild(brosFile.view)
+                    appendChild(predefinedFile.view)
+                }
+                verifyArrow = createView("start-verify") {
+                    createView<HTMLSpanElement>().textContent = "Scroll down to view result"
+
+                    addEventListener("click", EventListener {
+                        document.documentElement!!.scrollTo(ScrollToOptions(
+                                0.0,
+                                window.innerHeight.toDouble(),
+                                ScrollBehavior.SMOOTH
+                        ))
+                    })
+                }
+                createView<HTMLDivElement>("start-drag") {
+                    createView<HTMLSpanElement>().textContent = "Drag file here"
+                }
+
+                addEventListener("drop", EventListener {
+                    it.preventDefault()
+                    classList.remove("drag")
+
+                    val ev = it as DragEvent
+                    val dataTransfer = ev.dataTransfer ?: return@EventListener
+
+                    if (dataTransfer.items.length > 0) {
+                        for (i in 0 until dataTransfer.items.length) {
+                            if (dataTransfer.items[i]?.kind == "file") {
+                                val file = dataTransfer.items[i]!!.getAsFile()!!
+                                loadFile(file)
+                            }
+                        }
+                    } else {
+                        for (i in 0 until dataTransfer.files.length) {
+                            val file = dataTransfer.files[i]!!
+                            loadFile(file)
+                        }
+                    }
+                })
+                addEventListener("dragover", EventListener {
+                    it.preventDefault()
+                    classList.add("drag")
+                })
+                addEventListener("dragenter", EventListener {
+                    classList.add("drag")
+                })
+                addEventListener("dragleave", EventListener {
+                    classList.remove("drag")
+                })
             }
 
-
-    val useMatches: List<ForceMatch> = if (useForceMatches) forceMatches else emptyList()
-
-    console.log("--- bpmn ---")
-    console.log(bpmnTree.log())
-    console.log(bpmnTree.asSequence().groupingBy { it.element }.eachCount().filterValues { it > 1 }.entries.map { it.key to it.value }.toTypedArray())
-
-    console.log("--- bros ---")
-    console.log(brosTree.log())
-    console.log(brosTree.asSequence().groupingBy { it.element }.eachCount().filterValues { it > 1 }.entries.map { it.key to it.value }.toTypedArray())
-
-    console.log("--- force matching ---")
-    console.log(useMatches.toTypedArray())
-
-    val context = Context()
-
-    context.setupLane()
-    context.setupEvent()
-
-    val matcher = TreeMatcher(bpmnTree, brosTree)
-    for (m in context.matcherList) {
-        matcher.register(m)
+            resultPage = createView("result-page")
+        }
     }
-    val matchRounds = matcher.match(useMatches)
 
-    val verifier = TreeVerifier(bpmnTree, brosTree)
-    for (v in context.verifierList) {
-        verifier.register(v)
-    }
-    val results = verifier.verify()
-
-    render(bpmnTree, brosTree, useForceMatches, forceMatches, results, matchRounds)
-
+    return application
 }
 
-@Suppress("UNCHECKED_CAST")
-fun ModelTree<BpmnElement>.containerName(): Pair<String, ModelTree<BpmnElement>>? {
-    return when (val model = this.element) {
-        is BpmnLane -> {
-            model.name to this
-        }
-        is BpmnProcess -> {
-            parent?.let { parent ->
-                parent.children
-                        .map { it.element }
-                        .filterIsInstance<BpmnCollaboration>()
-                        .firstOrNull()
-                        ?.let { collaboration ->
-                            collaboration.content
-                                    .filterIsInstance<BpmnParticipant>()
-                                    .firstOrNull { it.processRef == model.id }
-                                    ?.name
-                                    ?.let { it to this }
+fun File.load(onLoad: (String) -> Unit) {
+    val reader = FileReader()
+    reader.readAsText(this)
+    reader.onloadend = {
+        onLoad(reader.result)
+    }
+}
+
+class FileObject<T : Any>(
+        name: String,
+        private val transform: (String) -> T,
+        private val count: (T) -> Int,
+        var onUpdate: () -> Unit = {}
+) {
+
+    private lateinit var textArea: HTMLTextAreaElement
+    private lateinit var countView: HTMLSpanElement
+
+    private var internalElement: T? = null
+    val element: T?
+        get() = internalElement
+
+    val view = createHtmlView<HTMLDivElement>("start-file") {
+        createView<HTMLDivElement>() {
+            createView<HTMLSpanElement>().textContent = name
+            val input = createView<HTMLInputElement> {
+                type = "file"
+
+                addEventListener("change", EventListener {
+                    val files = files!!
+                    for (i in 0 until files.length) {
+                        files[i]?.load {
+                            load(it)
                         }
+                    }
+                })
+            }
+            createView<HTMLButtonElement> {
+                textContent = "Select file"
+                addEventListener("click", EventListener {
+                    input.click()
+                })
             }
         }
-        else -> parent?.let { (it as ModelTree<BpmnElement>).containerName() }
+        createView<HTMLDivElement>() {
+            textArea = createView {
+                addEventListener("change", EventListener {
+                    update()
+                })
+                addEventListener("keyup", EventListener {
+                    update()
+                })
+            }
+        }
+        createView<HTMLDivElement>() {
+            countView = createView {
+                textContent = "No file selected"
+            }
+        }
+    }
+
+    private fun saveTransform(content: String) = try {
+        transform(content)
+    } catch (_: Exception) {
+        null
+    }
+
+    fun testFile(content: String) = saveTransform(content) != null
+
+    fun load(content: String) {
+        textArea.value = content
+        update()
+    }
+
+    private fun update() {
+        internalElement = saveTransform(textArea.value)
+        val e = element
+        if (e == null) {
+            countView.textContent = "Given file is not valid"
+        } else {
+            countView.textContent = "Found ${count(e)} elements"
+        }
+        onUpdate()
     }
 }

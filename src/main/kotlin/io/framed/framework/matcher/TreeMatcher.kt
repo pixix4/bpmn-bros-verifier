@@ -16,7 +16,7 @@ class TreeMatcher(
         matcherList += matcher
     }
 
-    fun match(forceMatches: List<ForceMatch>): Int? {
+    fun match(predefinedMatches: List<PredefinedMatch>): Int? {
         val bpmnSequence = bpmnTree.asSequence<BpmnElement>().toList()
         val brosSequence = brosTree.asSequence<ModelElement<*>>().toList()
 
@@ -38,14 +38,14 @@ class TreeMatcher(
                             bros.matchingElementsMap.getOrPut(bpmn) { mutableSetOf() } += matcher.name
                         }
                     }
-                    for (match in forceMatches) {
+                    for (match in predefinedMatches) {
                         if (bpmn.element.id == match.bpmn && bros.element.id == match.bros) {
                             when (match.type) {
-                                ForceMatch.Type.MATCH -> {
-                                    bpmn.matchingElementsMap.getOrPut(bros) { mutableSetOf() } += "ForceMatcher"
-                                    bros.matchingElementsMap.getOrPut(bpmn) { mutableSetOf() } += "ForceMatcher"
+                                PredefinedMatch.Type.MATCH -> {
+                                    bpmn.matchingElementsMap.getOrPut(bros) { mutableSetOf() } += "PredefinedMatcher"
+                                    bros.matchingElementsMap.getOrPut(bpmn) { mutableSetOf() } += "PredefinedMatcher"
                                 }
-                                ForceMatch.Type.NOMATCH -> {
+                                PredefinedMatch.Type.NOMATCH -> {
                                     bpmn.matchingElementsMap -= bros
                                     bros.matchingElementsMap -= bpmn
                                 }

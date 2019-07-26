@@ -3,17 +3,15 @@ package io.framed
 import de.westermann.kobserve.event.emit
 import de.westermann.kobserve.event.subscribe
 import io.framed.framework.ModelTree
-import io.framed.framework.matcher.ForceMatch
+import io.framed.framework.matcher.PredefinedMatch
 import io.framed.framework.util.async
 import io.framed.framework.util.createView
-import io.framed.framework.util.triggerDownload
 import io.framed.framework.verifier.Result
 import io.framed.model.bpmn.model.BpmnElement
 import io.framed.model.bros.ModelElement
 import org.w3c.dom.*
 import org.w3c.dom.clipboard.Clipboard
 import org.w3c.dom.events.EventListener
-import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.dom.clear
 import kotlin.properties.Delegates
@@ -47,7 +45,7 @@ private data class Entry(
             if (onDelete != null) {
                 createView<HTMLDivElement> {
                     classList.add("delete")
-                    createView<HTMLElement>("i") {
+                    createView<HTMLElement>(tag = "i") {
                         classList.add("material-icons")
                         textContent = "clear"
                     }
@@ -142,6 +140,7 @@ object FeatureState {
     var showInfos by Delegates.observable(true, this::save)
     var showSuccessful by Delegates.observable(true, this::save)
     var tab by Delegates.observable(0, this::save)
+    var usePredefinedMatches = true
 
     private fun <T : Any> save(property: KProperty<*>, oldValue: T, newValue: T) {
         if (newValue != oldValue) {
@@ -182,32 +181,33 @@ data class CopyBrosId(val id: Long?, val name: String? = null)
 
 @Suppress("UNCHECKED_CAST")
 fun render(
+        view: HTMLElement,
         bpmn: ModelTree<BpmnElement>,
         bros: ModelTree<ModelElement<*>>,
-        useForceMatches: Boolean,
-        forceMatches: List<ForceMatch>,
+        predefinedMatches: List<PredefinedMatch>,
+        onPredefinedMatchChange: (List<PredefinedMatch>) -> Unit,
         results: List<Result>,
         matchRounds: Int? = null
 ) {
-    val tabVerifyHead: HTMLSpanElement
-    val tabVerifyBody: HTMLDivElement
+    var tabVerifyHead: HTMLSpanElement = js("{}")
+    var tabVerifyBody: HTMLDivElement = js("{}")
 
-    val tabBpmnHead: HTMLSpanElement
-    val tabBpmnBody: HTMLDivElement
+    var tabBpmnHead: HTMLSpanElement = js("{}")
+    var tabBpmnBody: HTMLDivElement = js("{}")
 
-    val tabBrosHead: HTMLSpanElement
-    val tabBrosBody: HTMLDivElement
+    var tabBrosHead: HTMLSpanElement = js("{}")
+    var tabBrosBody: HTMLDivElement = js("{}")
 
-    val tabForceHead: HTMLSpanElement
-    val tabForceBody: HTMLDivElement
+    var tabPredefinedHead: HTMLSpanElement = js("{}")
+    var tabPredefinedBody: HTMLDivElement = js("{}")
 
-    document.body!!.apply {
+    view.apply {
         clear()
 
         createView<HTMLDivElement> selection@{
             classList.add("selection")
 
-            createView<HTMLElement>("i") {
+            createView<HTMLElement>(tag = "i") {
                 classList.add("material-icons")
                 textContent = "clear"
 
@@ -252,13 +252,13 @@ fun render(
                 addEventListener("click", EventListener {
                     this@selection.classList.remove("active")
 
-                    val match = ForceMatch(
+                    val match = PredefinedMatch(
                             bpmnField.dataset["id"] ?: return@EventListener,
                             brosField.dataset["id"]?.toLongOrNull() ?: return@EventListener,
-                            if (select.selectedIndex == 0) ForceMatch.Type.MATCH else ForceMatch.Type.NOMATCH
+                            if (select.selectedIndex == 0) PredefinedMatch.Type.MATCH else PredefinedMatch.Type.NOMATCH
                     )
 
-                    verify(bpmn, bros, useForceMatches, forceMatches + match)
+                    onPredefinedMatchChange(predefinedMatches + match)
                 })
 
                 val updateState = { _: Any ->
@@ -329,9 +329,10 @@ fun render(
                 createView<HTMLDivElement> {
                     dataset["title"] = "Features"
 
-                    feature(useForceMatches, "Use force matching") {
+                    feature(FeatureState.usePredefinedMatches, "Use predefined matching") {
                         this@container.clear()
-                        verify(bpmn, bros, it, forceMatches)
+                        FeatureState.usePredefinedMatches = it
+                        verify(view, bpmn, bros, predefinedMatches, onPredefinedMatchChange)
                     }
                     feature(FeatureState.showErrors, "Show errors") {
                         FeatureState.showErrors = it
@@ -364,16 +365,8 @@ fun render(
                 tabBrosHead = createView {
                     textContent = "BROS matching"
                 }
-                tabForceHead = createView {
-                    textContent = "Force matching"
-                }
-                createView<HTMLSpanElement> {
-                    classList.add("right")
-                    textContent = "Export force matches"
-
-                    addEventListener("click", EventListener {
-                        triggerDownload("match.json", ForceMatch.stringify(forceMatches))
-                    })
+                tabPredefinedHead = createView {
+                    textContent = "Predefined matching"
                 }
             }
 
@@ -451,14 +444,14 @@ fun render(
                         }
                     }
                 }
-                tabForceBody = createView {
-                    for (element in forceMatches) {
+                tabPredefinedBody = createView {
+                    for (element in predefinedMatches) {
                         createView<HTMLDivElement> {
                             classList.add("entry-box")
                             Entry(
                                     when (element.type) {
-                                        ForceMatch.Type.MATCH -> Entry.Type.ACCEPT
-                                        ForceMatch.Type.NOMATCH -> Entry.Type.ERROR
+                                        PredefinedMatch.Type.MATCH -> Entry.Type.ACCEPT
+                                        PredefinedMatch.Type.NOMATCH -> Entry.Type.ERROR
                                     },
                                     bpmn.asSequence().firstOrNull {
                                         it.element.id == element.bpmn
@@ -466,10 +459,10 @@ fun render(
                                     bros.asSequence().firstOrNull {
                                         it.element.id == element.bros
                                     },
-                                    "ForceMatcher",
+                                    "PredefinedMatcher",
                                     "Add rule by manuel matching"
                             ).render(this) {
-                                verify(bpmn, bros, useForceMatches, forceMatches - element)
+                                onPredefinedMatchChange(predefinedMatches - element)
                             }
                         }
                     }
@@ -478,8 +471,8 @@ fun render(
         }
     }
 
-    val header = listOf(tabVerifyHead, tabBpmnHead, tabBrosHead, tabForceHead)
-    val body = listOf(tabVerifyBody, tabBpmnBody, tabBrosBody, tabForceBody)
+    val header = listOf(tabVerifyHead, tabBpmnHead, tabBrosHead, tabPredefinedHead)
+    val body = listOf(tabVerifyBody, tabBpmnBody, tabBrosBody, tabPredefinedBody)
 
     for ((index, head) in header.withIndex()) {
         head.addEventListener("click", EventListener {

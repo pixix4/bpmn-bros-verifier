@@ -38,7 +38,7 @@ object BrosParser {
         ModelElement.lastId = document.maxId() + 1
         document
     } catch (e: Exception) {
-        console.log(e)
+        //console.log(e)
         null
     }
 }

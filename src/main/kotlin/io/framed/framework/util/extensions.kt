@@ -122,7 +122,11 @@ fun loadLocalFile(success: (String) -> Unit) {
     document.body?.removeChild(element)
 }
 
-inline fun <reified V : HTMLElement> createHtmlView(tag: String? = null, init: V.() -> Unit = {}): V {
+inline fun <reified V : HTMLElement> createHtmlView(
+        vararg classes: String,
+        tag: String? = null,
+        init: V.() -> Unit = {}
+): V {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
@@ -137,16 +141,21 @@ inline fun <reified V : HTMLElement> createHtmlView(tag: String? = null, init: V
         }
     }
     val element = document.createElement(tagName) as V
+    element.classList.add(*classes)
     element.init()
     return element
 }
 
-inline fun <reified V: HTMLElement> HTMLElement.createView(tag: String? = null, init: V.() -> Unit = {}): V {
+inline fun <reified V: HTMLElement> HTMLElement.createView(
+        vararg classes: String,
+        tag: String? = null,
+        init: V.() -> Unit = {}
+): V {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
 
-    val element = createHtmlView<V>(tag, init)
+    val element = createHtmlView<V>(*classes, tag = tag, init = init)
     appendChild(element)
     return element
 }
