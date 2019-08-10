@@ -1,18 +1,19 @@
 package io.framed
 
+import de.westermann.kobserve.property.property
 import io.framed.framework.Context
 import io.framed.framework.ModelRelation
 import io.framed.framework.ModelTree
 import io.framed.framework.matcher.PredefinedMatch
 import io.framed.framework.matcher.TreeMatcher
+import io.framed.framework.verifier.Result
 import io.framed.framework.verifier.TreeVerifier
 import io.framed.model.bpmn.model.*
 import io.framed.model.bros.ModelConnection
 import io.framed.model.bros.ModelElement
 import io.framed.model.bros.ModelElementGroup
-import io.framed.modules.setupEvent
-import io.framed.modules.setupLane
-import org.w3c.dom.HTMLElement
+import io.framed.modules.activeModules
+import io.framed.ui.FeatureState
 
 
 fun generateBpmnTree(connections: List<ModelRelation<BpmnFlow>>, element: BpmnElement): ModelTree<BpmnElement> {
@@ -69,13 +70,29 @@ fun generateBrosTree(connections: List<ModelRelation<ModelConnection<*>>>, eleme
     return tree
 }
 
+data class RenderableData(
+        val bpmnTree: ModelTree<BpmnElement>,
+        val brosTree: ModelTree<ModelElement<*>>,
+        val predefinedMatches: List<PredefinedMatch>,
+        val results: List<Result>,
+        val matchRounds: Int? = null
+) {
+
+    init {
+        renderableProperty.value = this
+    }
+
+    companion object {
+        val renderableProperty = property<RenderableData?>(null)
+        var renderableData by renderableProperty
+    }
+}
+
 @Suppress("UnsafeCastFromDynamic")
 fun verify(
-        view: HTMLElement,
         bpmnTree: ModelTree<BpmnElement>,
         brosTree: ModelTree<ModelElement<*>>,
-        predefinedMatches: List<PredefinedMatch>,
-        onPredefinedMatchChange: (List<PredefinedMatch>) -> Unit
+        predefinedMatches: List<PredefinedMatch>
 ) {
     for (element in bpmnTree.asSequence()) {
         element.matchingElementsMap.clear()
@@ -86,23 +103,11 @@ fun verify(
 
     val useMatches: List<PredefinedMatch> = if (FeatureState.usePredefinedMatches) predefinedMatches else emptyList()
 
-    /*
-    console.log("--- bpmn ---")
-    console.log(bpmnTree.log())
-    console.log(bpmnTree.asSequence().groupingBy { it.element }.eachCount().filterValues { it > 1 }.entries.map { it.key to it.value }.toTypedArray())
-
-    console.log("--- bros ---")
-    console.log(brosTree.log())
-    console.log(brosTree.asSequence().groupingBy { it.element }.eachCount().filterValues { it > 1 }.entries.map { it.key to it.value }.toTypedArray())
-
-    console.log("--- predefined matching ---")
-    console.log(useMatches.toTypedArray())
-     */
-
     val context = Context()
 
-    context.setupLane()
-    context.setupEvent()
+    for (module in activeModules) {
+        module(context)
+    }
 
     val matcher = TreeMatcher(bpmnTree, brosTree)
     for (m in context.matcherList) {
@@ -116,8 +121,13 @@ fun verify(
     }
     val results = verifier.verify()
 
-    render(view, bpmnTree, brosTree, predefinedMatches, onPredefinedMatchChange, results, matchRounds)
-
+    RenderableData(
+            bpmnTree,
+            brosTree,
+            predefinedMatches,
+            results,
+            matchRounds
+    )
 }
 
 @Suppress("UNCHECKED_CAST")

@@ -37,7 +37,7 @@ body, html {
   }
 }
 
-.entry {
+.result-entry {
   background-color: #fff;
   border-top: solid 1px rgba(#000, 0.2);
   position: relative;
@@ -75,7 +75,7 @@ body, html {
   padding-top: 0.2rem;
   padding-bottom: 1rem;
 
-  span {
+  .result-field {
     padding-right: 1rem;
     min-width: 20%;
     flex-grow: 1;
@@ -93,7 +93,7 @@ body, html {
     }
   }
 
-  div {
+  .box-view {
     display: flex;
     flex-wrap: wrap;
     line-height: 1rem;
@@ -126,7 +126,13 @@ body, html {
   }
 }
 
-.field {
+@keyframes update-highlight {
+  0%   {background-color: transparent;}
+  20%  {background-color: rgba($primary-color, 0.6);}
+  100% {background-color: transparent;}
+}
+
+.result-field {
   position: relative;
   padding-top: 1.5rem;
   display: block;
@@ -165,6 +171,11 @@ body, html {
 
   &:empty {
     opacity: 0.4;
+  }
+
+  &.updated span:first-child {
+    animation-name: update-highlight;
+    animation-duration: 1s;
   }
 }
 
@@ -253,7 +264,7 @@ $levels: "error", "warn", "info", "accept";
   }
 }
 
-.container-stats {
+.result-stats {
   z-index: 2;
   overflow: hidden;
   display: flex;
@@ -264,7 +275,7 @@ $levels: "error", "warn", "info", "accept";
   border-top: solid 1px rgba(#000, 0.1);
   padding: 0 0.5rem;
 
-  div {
+  .box-view {
     flex-grow: 1;
     border-right: solid 1px rgba(#000, 0.1);
     padding-bottom: 0.5rem;
@@ -278,14 +289,10 @@ $levels: "error", "warn", "info", "accept";
     &:last-child {
       border-right: none;
     }
-
-    span {
-      display: block;
-    }
   }
 }
 
-.container-header {
+.result-container-header {
   position: sticky;
   top: 0;
   display: block;
@@ -323,7 +330,7 @@ $levels: "error", "warn", "info", "accept";
   }
 }
 
-.container-body {
+.result-container-body {
   padding-top: 0.5rem;
 
   & > div {
@@ -346,11 +353,12 @@ $levels: "error", "warn", "info", "accept";
   }
 }
 
-.feature {
+.result-feature {
   @include no-select();
 
   padding: 0 !important;
   margin-top: 0.2rem;
+  margin-left: 0.5rem;
 
   input {
     display: none;
@@ -407,9 +415,9 @@ $levels: "error", "warn", "info", "accept";
   }
 }
 
-.selection {
+.copy-view {
   position: fixed;
-  bottom: -5rem;
+  bottom: -10rem;
   line-height: 2rem;
   border-radius: 0.2rem;
   background-color: #fff;
@@ -423,7 +431,7 @@ $levels: "error", "warn", "info", "accept";
   transition: bottom 0.2s;
 
   &.active {
-    bottom: -0.2rem;
+    bottom: 1rem;
   }
 
   * {
@@ -435,7 +443,7 @@ $levels: "error", "warn", "info", "accept";
     }
   }
 
-  .field {
+  .result-field {
     padding-top: 1rem;
     margin-top: -0.5rem;
     margin-bottom: -2rem;
@@ -481,7 +489,7 @@ $levels: "error", "warn", "info", "accept";
   display: flex;
 }
 
-.start-file {
+.file-text-box {
   width: 100%;
   margin: 1rem;
   position: relative;
@@ -622,4 +630,12 @@ select {
   position: absolute;
   top: 1rem;
   right: 1rem;
+}
+
+.result-view {
+  min-height: 100%;
+
+  &.hidden {
+    display: none;
+  }
 }

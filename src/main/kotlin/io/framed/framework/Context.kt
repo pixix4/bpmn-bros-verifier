@@ -44,14 +44,14 @@ class Context {
     internal fun <Bpmn : BpmnElement> verifyBpmn(
             clazz: KClass<Bpmn>,
             name: String? = null,
-            verifier: (bpmn: ModelTree<Bpmn>) -> Result
+            verifier: (bpmn: ModelTree<Bpmn>) -> Result?
     ) {
         verifierList += object : BpmnVerifier {
             override val name = name ?: super.name
 
             override val filter: Set<KClass<out BpmnElement>> = setOf(clazz)
 
-            override fun verifyBpmn(element: ModelTree<BpmnElement>): Result {
+            override fun verifyBpmn(element: ModelTree<BpmnElement>): Result? {
                 @Suppress("UNCHECKED_CAST")
                 return verifier(element as ModelTree<Bpmn>)
             }
@@ -60,19 +60,19 @@ class Context {
 
     inline fun <reified Bpmn : BpmnElement> verifyBpmn(
             name: String? = null,
-            noinline verifier: (bpmn: ModelTree<Bpmn>) -> Result
+            noinline verifier: (bpmn: ModelTree<Bpmn>) -> Result?
     ) = verifyBpmn(Bpmn::class, name, verifier)
 
     @PublishedApi
     internal fun <Bros : ModelElement<Bros>> verifyBros(
             clazz: KClass<Bros>,
             name: String? = null,
-            verifier: (bros: ModelTree<Bros>) -> Result
+            verifier: (bros: ModelTree<Bros>) -> Result?
     ) {
         verifierList += object : BrosVerifier {
             override val name = name ?: super.name
             override val filter: Set<KClass<out ModelElement<*>>> = setOf(clazz)
-            override fun verifyBros(element: ModelTree<ModelElement<*>>): Result {
+            override fun verifyBros(element: ModelTree<ModelElement<*>>): Result? {
                 @Suppress("UNCHECKED_CAST")
                 return verifier(element as ModelTree<Bros>)
             }
@@ -81,6 +81,6 @@ class Context {
 
     inline fun <reified Bros : ModelElement<Bros>> verifyBros(
             name: String? = null,
-            noinline verifier: (bros: ModelTree<Bros>) -> Result
+            noinline verifier: (bros: ModelTree<Bros>) -> Result?
     ) = verifyBros(Bros::class, name, verifier)
 }

@@ -13,16 +13,8 @@ data class Result private constructor(
         val verifier: Verifier?
 ) {
     companion object {
-        fun ignore( bpmn: ModelTree<*>? = null, bros: ModelTree<*>? = null) = Result(
-                Type.IGNORE,
-                bpmn as? ModelTree<BpmnElement>,
-                bros as? ModelTree<ModelElement<*>>,
-                "",
-                null
-        )
-
         fun match(message: String, bpmn: ModelTree<*>? = null, bros: ModelTree<*>? = null) = Result(
-                Type.MATCH,
+                Type.POSITIVE,
                 bpmn as? ModelTree<BpmnElement>,
                 bros as? ModelTree<ModelElement<*>>,
                 message,
@@ -30,7 +22,7 @@ data class Result private constructor(
         )
 
         fun error(message: String, bpmn: ModelTree<*>? = null, bros: ModelTree<*>? = null) = Result(
-                Type.ERROR,
+                Type.NEGATIVE,
                 bpmn as? ModelTree<BpmnElement>,
                 bros as? ModelTree<ModelElement<*>>,
                 message,
@@ -39,6 +31,6 @@ data class Result private constructor(
     }
 
     enum class Type {
-        MATCH, ERROR, IGNORE
+        POSITIVE, NEGATIVE
     }
 }

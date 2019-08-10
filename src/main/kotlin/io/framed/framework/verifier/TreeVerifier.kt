@@ -22,10 +22,10 @@ class TreeVerifier(
         val results: MutableList<Result> = mutableListOf()
 
         for (verifier in verifierList) {
-            for (bpmn in bpmnSequence) {
-                if (verifier.filterBpmn(bpmn)) {
-                    val result = verifier.verifyBpmn(bpmn)
-                    if (result.type != Result.Type.IGNORE) {
+            if (verifier !is BrosVerifier) {
+                for (bpmn in bpmnSequence) {
+                    if (verifier.filterBpmn(bpmn)) {
+                        val result = verifier.verifyBpmn(bpmn) ?: continue
                         results += result.copy(
                                 bpmn = bpmn,
                                 verifier = verifier
@@ -33,10 +33,11 @@ class TreeVerifier(
                     }
                 }
             }
-            for (bros in brosSequence) {
-                if (verifier.filterBros(bros)) {
-                    val result = verifier.verifyBros(bros)
-                    if (result.type != Result.Type.IGNORE) {
+
+            if (verifier !is BpmnVerifier) {
+                for (bros in brosSequence) {
+                    if (verifier.filterBros(bros)) {
+                        val result = verifier.verifyBros(bros) ?: continue
                         results += result.copy(
                                 bros = bros,
                                 verifier = verifier

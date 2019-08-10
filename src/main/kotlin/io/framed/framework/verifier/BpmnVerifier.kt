@@ -17,7 +17,7 @@ interface BpmnVerifier : Verifier {
         return false
     }
 
-    override fun verifyBros(element: ModelTree<ModelElement<*>>): Result {
+    override fun verifyBros(element: ModelTree<ModelElement<*>>): Result? {
         throw UnsupportedOperationException("Cannot verify bros elements in $name:BpmnVerifier!")
     }
 }

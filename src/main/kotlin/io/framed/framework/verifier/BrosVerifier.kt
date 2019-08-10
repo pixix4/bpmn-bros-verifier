@@ -17,7 +17,7 @@ interface BrosVerifier : Verifier {
         return filter.isEmpty() || bros.type in filter
     }
 
-    override fun verifyBpmn(element: ModelTree<BpmnElement>): Result {
+    override fun verifyBpmn(element: ModelTree<BpmnElement>): Result? {
         throw UnsupportedOperationException("Cannot verify bpmn elements in $name:BrosVerifier!")
     }
 }

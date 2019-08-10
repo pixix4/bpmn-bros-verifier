@@ -10,9 +10,9 @@ interface Verifier {
 
     fun filterBros(bros: ModelTree<ModelElement<*>>): Boolean
 
-    fun verifyBpmn(element: ModelTree<BpmnElement>): Result
+    fun verifyBpmn(element: ModelTree<BpmnElement>): Result?
 
-    fun verifyBros(element: ModelTree<ModelElement<*>>): Result
+    fun verifyBros(element: ModelTree<ModelElement<*>>): Result?
 
     val name: String
             get() = this::class.simpleName ?: "UnknownVerifier"

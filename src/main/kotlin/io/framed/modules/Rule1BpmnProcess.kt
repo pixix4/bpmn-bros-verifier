@@ -3,17 +3,13 @@ package io.framed.modules
 import io.framed.framework.Context
 import io.framed.framework.matcher.matchStrings
 import io.framed.framework.verifier.Result
-import io.framed.model.bpmn.model.BpmnLane
 import io.framed.model.bpmn.model.BpmnParticipant
 import io.framed.model.bpmn.model.BpmnProcess
 import io.framed.model.bros.Event
 import io.framed.model.bros.RoleType
 import io.framed.model.bros.Scene
 
-fun Context.setupLane() {
-    match<BpmnLane, RoleType> { lane, role ->
-        matchStrings(lane.element.name, role.element.name)
-    }
+fun Context.setupRule1() {
 
     match<BpmnParticipant, Scene> { lane, scene ->
         matchStrings(lane.element.name, scene.element.name)
@@ -33,16 +29,6 @@ fun Context.setupLane() {
     }
     match<BpmnProcess, Event> { process, bros ->
         process.element.participant != null && matchStrings(process.element.participant!!.name, bros.element.desc)
-    }
-
-    verifyBpmn<BpmnLane>("BpmnLaneVerifier") { bpmn ->
-        for (match in bpmn.matchingElements) {
-            val roleType = match.model<RoleType>()
-            if (roleType != null) {
-                return@verifyBpmn Result.match("BpmnLane '${bpmn.element.name}' matches RoleType '${roleType.name}'", bros = match)
-            }
-        }
-        Result.error("Cannot find matching bros element for BpmnLane '${bpmn.element.name}'")
     }
 
     verifyBpmn<BpmnParticipant>("BpmnParticipantVerifier") { bpmn ->
