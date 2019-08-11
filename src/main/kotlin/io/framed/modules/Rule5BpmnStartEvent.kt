@@ -9,12 +9,13 @@ import io.framed.model.bros.CreateRelationship
 import io.framed.model.bros.Event
 import io.framed.model.bros.ModelElement
 
+@Suppress("UNCHECKED_CAST")
 fun Context.setupRule5() {
 
     /**
      * Bpmn start event must match a bros event that creates the same container
      */
-    verifyBpmn<BpmnEvent>("BpmnStartEventVerifier") { bpmn ->
+    verifyBpmn<BpmnEvent>("Rule 5 - BpmnStartEvent") { bpmn ->
         if (bpmn.element.terminationEvent || bpmn.element.type != BpmnEvent.Type.START) return@verifyBpmn null
 
         for (match in bpmn.matchingElements) {

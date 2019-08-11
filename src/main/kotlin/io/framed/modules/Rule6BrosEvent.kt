@@ -20,7 +20,7 @@ fun Context.setupRule6() {
     /**
      * A bros event should have a matching element in bpmn.
      */
-    verifyBros<Event>("BrosEventVerifier") { bros ->
+    verifyBros<Event>("Rule 6 - BrosEvent") { bros ->
         for (element in bros.matchingElements) {
             val match = element.element as? BpmnElement ?: continue
             return@verifyBros Result.match("BrosEvent '${bros.element.desc}' matches ${match.stringify()}", bpmn = element)
@@ -31,7 +31,7 @@ fun Context.setupRule6() {
     /**
      * A bros return event should have a matching element in bpmn.
      */
-    verifyBros<ReturnEvent>("BrosReturnEventVerifier") { bros ->
+    verifyBros<ReturnEvent>("Rule 6 - BrosReturnEvent") { bros ->
         for (element in bros.matchingElements) {
             val match = element.element as? BpmnElement ?: continue
             return@verifyBros Result.match("BrosReturnEvent '${bros.element.desc}' matches ${match.stringify()}", bpmn = element)

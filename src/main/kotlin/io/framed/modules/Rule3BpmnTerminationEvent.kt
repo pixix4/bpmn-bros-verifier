@@ -52,7 +52,7 @@ fun Context.setupRule3() {
     /**
      * Bpmn termination event must match a bros return event
      */
-    verifyBpmn<BpmnEvent>("BpmnTerminationEventVerifier") { bpmn ->
+    verifyBpmn<BpmnEvent>("Rule 3 - BpmnTerminationEvent") { bpmn ->
         if (!bpmn.element.terminationEvent) return@verifyBpmn null
 
         for (match in bpmn.matchingElements) {

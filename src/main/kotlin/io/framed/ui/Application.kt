@@ -139,43 +139,44 @@ class Application : ViewCollection<View>() {
                     ))
                 }
             }
-            boxView("start-drag") {
-                textView("Drag file here")
-            }
-
-            onDrop { ev ->
-                ev.preventDefault()
-                classList.remove("drag")
-
-                val dataTransfer = ev.dataTransfer ?: return@onDrop
-
-                if (dataTransfer.items.length > 0) {
-                    for (i in 0 until dataTransfer.items.length) {
-                        if (dataTransfer.items[i]?.kind == "file") {
-                            val file = dataTransfer.items[i]!!.getAsFile()!!
-                            loadFile(file)
-                        }
-                    }
-                } else {
-                    for (i in 0 until dataTransfer.files.length) {
-                        val file = dataTransfer.files[i]!!
-                        loadFile(file)
-                    }
-                }
-            }
-            onDragOver {
-                it.preventDefault()
-                classList.add("drag")
-            }
-            onDragEnter {
-                classList.add("drag")
-            }
-            onDragLeave {
-                classList.remove("drag")
-            }
         }
 
         +ResultView()
+
+        boxView("start-drag") {
+            textView("Drag file here")
+        }
+
+        onDrop { ev ->
+            ev.preventDefault()
+            classList.remove("drag")
+
+            val dataTransfer = ev.dataTransfer ?: return@onDrop
+
+            if (dataTransfer.items.length > 0) {
+                for (i in 0 until dataTransfer.items.length) {
+                    if (dataTransfer.items[i]?.kind == "file") {
+                        val file = dataTransfer.items[i]!!.getAsFile()!!
+                        loadFile(file)
+                    }
+                }
+            } else {
+                for (i in 0 until dataTransfer.files.length) {
+                    val file = dataTransfer.files[i]!!
+                    loadFile(file)
+                }
+            }
+        }
+        onDragOver {
+            it.preventDefault()
+            classList.add("drag")
+        }
+        onDragEnter {
+            classList.add("drag")
+        }
+        onDragLeave {
+            classList.remove("drag")
+        }
     }
 }
 

@@ -31,7 +31,7 @@ fun Context.setupRule1() {
         process.element.participant != null && matchStrings(process.element.participant!!.name, bros.element.desc)
     }
 
-    verifyBpmn<BpmnParticipant>("BpmnParticipantVerifier") { bpmn ->
+    verifyBpmn<BpmnParticipant>("Rule 1 - BpmnProcess") { bpmn ->
         for (match in bpmn.matchingElements) {
             val roleType = match.model<RoleType>()
             if (roleType != null) {

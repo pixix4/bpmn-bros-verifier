@@ -16,7 +16,7 @@ fun Context.setupRule4() {
     /**
      * Bpmn end event must match a bros event that destroys the same container
      */
-    verifyBpmn<BpmnEvent>("BpmnEndEventVerifier") { bpmn ->
+    verifyBpmn<BpmnEvent>("Rule 4 - BpmnEndEvent") { bpmn ->
         if (bpmn.element.terminationEvent || bpmn.element.type != BpmnEvent.Type.END) return@verifyBpmn null
 
         for (match in bpmn.matchingElements) {
