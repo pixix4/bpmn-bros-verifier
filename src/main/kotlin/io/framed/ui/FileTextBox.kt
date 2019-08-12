@@ -52,7 +52,7 @@ class FileTextBox<T : Any>(
                 input.click()
             }
         }
-        boxView {
+        boxView("text-area-box") {
             textArea(contentProperty)
         }
         boxView {

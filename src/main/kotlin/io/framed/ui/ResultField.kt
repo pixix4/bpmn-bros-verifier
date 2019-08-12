@@ -19,7 +19,7 @@ class ResultField(
     private val isBrosId = name.equals("bros", true)
 
     init {
-        textView(value.mapBinding { it?.toString() ?: "" })
+        property(html::textContent).bind(value.mapBinding { it?.toString() })
 
         if (!(isBpmnId || isBrosId)) {
             value.onChange {
@@ -31,17 +31,20 @@ class ResultField(
             }
         }
 
+        val clickable = extra.mapBinding { it != null }
+
         dataset["title"] = name
         dataset.bind("extra", extra.mapBinding {
             it?.let { "ID: $it" }
         })
 
-        classList.add("clickable")
-        title = "Click to copy ID"
+        classList.bind("clickable", clickable)
+        property(this::title).bind(clickable.mapBinding { if (it) "Click to copy ID" else null })
 
         onClick {
-            val clip = window.navigator.clipboard
-            clip.writeText(value.value.toString())
+            if (clickable.value) {
+                val clip = window.navigator.clipboard
+                clip.writeText(value.value.toString())
 
                 if (isBpmnId) {
                     CopyView.bpmnIdProperty.value = extra.value?.toString()
@@ -51,19 +54,19 @@ class ResultField(
                     CopyView.brosNameProperty.value = value.value?.toString() ?: ""
                 }
 
-            textView("Copied ID !") {
-                classList += "tooltip"
+                textView("Copied ID !") {
+                    classList += "tooltip"
 
-                async(2000) {
-                    this@ResultField.remove(this)
-                }
-                onClick {
-                    it.stopPropagation()
-                    it.preventDefault()
-                    this@ResultField.remove(this)
+                    async(2000) {
+                        this@ResultField.remove(this)
+                    }
+                    onClick {
+                        it.stopPropagation()
+                        it.preventDefault()
+                        this@ResultField.remove(this)
+                    }
                 }
             }
         }
-
     }
 }

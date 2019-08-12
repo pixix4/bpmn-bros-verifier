@@ -119,8 +119,10 @@ class Application : ViewCollection<View>() {
 
         boxView("start-page") {
             boxView("start-header") {
-                h1("BPMN-BROS-Verifier")
-                textView("Select bpmn and bros file to start verification")
+                boxView {
+                    h1("BPMN-BROS-Verifier")
+                    textView("Select bpmn and bros file to start verification")
+                }
             }
             boxView("start-files") {
                 +bpmnFile
@@ -128,15 +130,17 @@ class Application : ViewCollection<View>() {
                 +predefinedFile
             }
             boxView("start-verify") {
-                classList.bind("active", validProperty)
-                textView("Scroll down to view result")
+                boxView {
+                    classList.bind("active", validProperty)
+                    textView("Scroll down to view result")
 
-                onClick {
-                    document.documentElement!!.scrollTo(ScrollToOptions(
-                            0.0,
-                            window.innerHeight.toDouble(),
-                            ScrollBehavior.SMOOTH
-                    ))
+                    onClick {
+                        document.documentElement!!.scrollTo(ScrollToOptions(
+                                0.0,
+                                window.innerHeight.toDouble(),
+                                ScrollBehavior.SMOOTH
+                        ))
+                    }
                 }
             }
         }

@@ -29,13 +29,21 @@ class ResultEntry(
         classList += "entry-${type.name.toLowerCase()}"
 
         boxView {
-            +ResultField("BPMN", bpmn.toString().observe(), bpmn?.element?.id.observe())
-            +ResultField("BROS", bros.toString().observe(), bros?.element?.id.observe())
-            +ResultField("Module", module.toString().observe())
+            +ResultField("BPMN", bpmn?.toString().observe(), bpmn?.element?.id.observe()).also {
+                it.classList += "field-1-1"
+            }
+            +ResultField("BROS", bros?.toString().observe(), bros?.element?.id.observe()).also {
+                it.classList += "field-1-2"
+            }
+            +ResultField("Module", module.observe()).also {
+                it.classList += "field-1-3"
+            }
         }
 
         boxView {
-            +ResultField("Message", message.observe())
+            +ResultField("Message", message.observe()).also {
+                it.classList += "field-2-1"
+            }
         }
 
         if (onDelete != null) {
