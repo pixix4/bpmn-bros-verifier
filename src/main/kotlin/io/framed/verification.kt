@@ -8,6 +8,7 @@ import io.framed.framework.matcher.PredefinedMatch
 import io.framed.framework.matcher.TreeMatcher
 import io.framed.framework.verifier.Result
 import io.framed.framework.verifier.TreeVerifier
+import io.framed.model.bpmn.BpmnModel
 import io.framed.model.bpmn.model.*
 import io.framed.model.bros.model.BrosConnection
 import io.framed.model.bros.model.BrosElement
@@ -15,11 +16,14 @@ import io.framed.model.bros.model.BrosObjectGroup
 import io.framed.modules.activeModules
 import io.framed.ui.FeatureState
 
-
-fun generateBpmnTree(connections: List<ModelRelation<BpmnFlow>>, element: BpmnElement): ModelTree<BpmnElement> {
-    val children = if (element is BpmnElementGroup && element !is BpmnLane) {
-        element.content.filter { it !is BpmnFlow }.map { generateBpmnTree(connections, it) }
-    } else emptyList()
+fun generateBpmnTree(connections: List<ModelRelation<BpmnElement>>, element: BpmnElement): ModelTree<BpmnElement> {
+    val children = when (element) {
+        is BpmnModel -> element.content.filter { it !is BpmnSequenceFlow && it !is BpmnMessageFlow }.map { generateBpmnTree(connections, it) }
+        is BpmnProcess -> element.content.filter { it !is BpmnSequenceFlow && it !is BpmnMessageFlow }.map { generateBpmnTree(connections, it) }
+        is BpmnLaneSet -> element.content.map { generateBpmnTree(connections, it) }
+        is BpmnLane -> element.content.map { generateBpmnTree(connections, it) }
+        else -> emptyList()
+    }
 
     val tree = ModelTree(
             null,
@@ -31,12 +35,21 @@ fun generateBpmnTree(connections: List<ModelRelation<BpmnFlow>>, element: BpmnEl
     tree.children.forEach { it.parent = tree }
 
     for (connection in connections) {
-        if (element.id == connection.relation.sourceRef) {
-            tree.relations += connection
-            connection.target = tree
-        } else if (element.id == connection.relation.targetRef) {
-            tree.relations += connection
-            connection.source = tree
+        when (connection.relation) {
+            is BpmnMessageFlow -> if (element.id == connection.relation.sourceRef) {
+                tree.relations += connection
+                connection.target = tree
+            } else if (element.id == connection.relation.targetRef) {
+                tree.relations += connection
+                connection.source = tree
+            }
+            is BpmnSequenceFlow -> if (element.id == connection.relation.sourceRef) {
+                tree.relations += connection
+                connection.target = tree
+            } else if (element.id == connection.relation.targetRef) {
+                tree.relations += connection
+                connection.source = tree
+            }
         }
     }
 
@@ -129,33 +142,3 @@ fun verify(
             matchRounds
     )
 }
-
-@Suppress("UNCHECKED_CAST")
-fun ModelTree<BpmnElement>.container(): ContainerData? {
-    return when (val model = this.element) {
-        is BpmnLane -> {
-            ContainerData(model.name, this)
-        }
-        is BpmnProcess -> {
-            parent?.let { parent ->
-                parent.children
-                        .map { it.element }
-                        .filterIsInstance<BpmnCollaboration>()
-                        .firstOrNull()
-                        ?.let { collaboration ->
-                            collaboration.content
-                                    .filterIsInstance<BpmnParticipant>()
-                                    .firstOrNull { it.processRef == model.id }
-                                    ?.name
-                                    ?.let { ContainerData(it, this) }
-                        }
-            }
-        }
-        else -> parent?.let { (it as ModelTree<BpmnElement>).container() }
-    }
-}
-
-data class ContainerData(
-        val name: String,
-        val element: ModelTree<BpmnElement>
-)

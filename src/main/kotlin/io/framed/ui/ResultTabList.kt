@@ -4,7 +4,7 @@ import de.westermann.kwebview.View
 import de.westermann.kwebview.ViewCollection
 import de.westermann.kwebview.components.boxView
 
-class ResultTabList(init: ResultTabList.() -> Unit): ViewCollection<View>() {
+class ResultTabList(init: ResultTabList.() -> Unit) : ViewCollection<View>() {
 
     private var tabs = emptyList<ResultTab>()
 

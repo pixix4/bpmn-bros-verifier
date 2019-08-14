@@ -63,7 +63,7 @@ class ModelTree<out T : Any>(
     }
 
     override fun toString() = when (element) {
-        is BpmnElement -> element.log(false)
+        is BpmnElement -> element.stringify()
         is BrosElement -> element.stringify()
         else -> element.toString()
     }
@@ -82,7 +82,15 @@ class ModelTree<out T : Any>(
     override fun hashCode(): Int {
         return element.hashCode()
     }
-
-
 }
 
+fun ModelTree<*>.transitiveParent(): List<ModelTree<*>> {
+    var element = this
+    val parents = mutableListOf<ModelTree<*>>()
+    while (element.parent != null) {
+        val p = element.parent ?: return parents
+        parents += p
+        element = p
+    }
+    return parents
+}

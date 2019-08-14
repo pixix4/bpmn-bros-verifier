@@ -29,9 +29,9 @@ class Context {
         matcherList += object : Matcher {
             override val name = name ?: matcherName ?: super.name
 
-            override fun filterBpmn(bpmn: ModelTree<BpmnElement>) = bpmn.type == Bpmn::class
+            override fun filterBpmn(bpmn: ModelTree<BpmnElement>) = bpmn.element is Bpmn
 
-            override fun filterBros(bros: ModelTree<BrosElement>) = bros.type == Bros::class
+            override fun filterBros(bros: ModelTree<BrosElement>) = bros.element is Bros
 
             override fun match(bpmn: ModelTree<BpmnElement>, bros: ModelTree<BrosElement>): Boolean {
                 @Suppress("UNCHECKED_CAST")

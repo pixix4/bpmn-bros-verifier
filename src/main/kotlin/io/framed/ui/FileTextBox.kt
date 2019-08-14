@@ -19,7 +19,7 @@ class FileTextBox<T : Any>(
 
     private fun saveTransform(string: String) = try {
         transform(string)
-    } catch (_:Exception) {
+    } catch (_: Exception) {
         null
     }
 

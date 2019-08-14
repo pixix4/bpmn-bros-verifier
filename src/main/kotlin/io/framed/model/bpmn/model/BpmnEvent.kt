@@ -2,38 +2,43 @@ package io.framed.model.bpmn.model
 
 import io.framed.model.bpmn.xml.XmlElement
 
-class BpmnEvent(
-        override val id: String,
-        val type: Type,
-        val terminationEvent: Boolean
-) : BpmnElement {
+interface BpmnEvent : BpmnFlowObject {
 
-    var name: String = ""
-
-    companion object : BpmnParser<BpmnEvent>(".*[Ee]vent".toRegex()) {
-        override fun parse(xml: XmlElement): BpmnEvent {
-            if (!canParse(xml)) throw IllegalArgumentException("Cannot parse BpmnEvent")
-
-            val type = when (xml.tagName) {
-                "bpmn:startEvent" -> Type.START
-                "bpmn:endEvent" -> Type.END
-                else -> Type.UNKNOWN
+    companion object {
+        fun parse(xml: XmlElement, parent: BpmnElement) = when (xml.tagName) {
+            "bpmn:startEvent" -> {
+                BpmnStartEvent(xml["id"], xml["name"], parent)
             }
-
-            val terminationEvent = xml.children.find { it.tagName == "bpmn:terminateEventDefinition" } != null
-
-            val bpmn = BpmnEvent(xml["id"], type, terminationEvent)
-            bpmn.name = xml["name"]
-
-            return bpmn
+            "bpmn:endEvent" -> {
+                BpmnEndEvent(
+                        xml["id"],
+                        xml["name"],
+                        xml.children.find { it.tagName == "bpmn:terminateEventDefinition" } != null,
+                        parent
+                )
+            }
+            else -> {
+                BpmnIntermediateEvent(xml["id"], xml["name"], parent)
+            }
         }
     }
-
-    override fun stringify(): String {
-        return super.stringify() + "($name: $type)"
-    }
-
-    enum class Type {
-        START, END, UNKNOWN
-    }
 }
+
+class BpmnStartEvent(
+        override val id: String,
+        override val name: String,
+        override var parent: BpmnElement?
+) : BpmnEvent
+
+class BpmnEndEvent(
+        override val id: String,
+        override val name: String,
+        val terminationEvent: Boolean,
+        override var parent: BpmnElement?
+) : BpmnEvent
+
+class BpmnIntermediateEvent(
+        override val id: String,
+        override val name: String,
+        override var parent: BpmnElement?
+) : BpmnEvent

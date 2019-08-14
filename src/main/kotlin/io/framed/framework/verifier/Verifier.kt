@@ -15,6 +15,6 @@ interface Verifier {
     fun verifyBros(element: ModelTree<BrosElement>): Result?
 
     val name: String
-            get() = this::class.simpleName ?: "UnknownVerifier"
+        get() = this::class.simpleName ?: "UnknownVerifier"
 }
 

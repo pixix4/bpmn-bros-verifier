@@ -1,25 +1,40 @@
 package io.framed.model.bpmn.model
 
+import io.framed.model.bpmn.BpmnModel
 import io.framed.model.bpmn.xml.XmlElement
 
 class BpmnLaneSet(
-    override val id: String
-) : BpmnElementGroup {
+        override val id: String,
+        override var parent: BpmnElement?
+) : BpmnElement {
 
-    override val content: MutableList<BpmnLane> = mutableListOf()
+    override val name: String = ""
 
-    companion object : BpmnParser<BpmnLaneSet>("laneSet".toRegex()) {
-        override fun parse(xml: XmlElement): BpmnLaneSet {
-            if (!canParse(xml)) throw IllegalArgumentException("Cannot parse BpmnLaneSet")
+    val content = mutableListOf<BpmnLane>()
 
-            val bpmn = BpmnLaneSet(xml["id"])
+    override fun getAllChildren(): List<BpmnElement> {
+        return super.getAllChildren() + content.flatMap { it.getAllChildren() }
+    }
 
-            for (child in xml.children) {
-                val element = BpmnLane.parse(child)
-                bpmn.content += element
-            }
+    override fun build(model: BpmnModel) {
+        for (element in content) {
+            element.build(model)
+        }
+    }
 
-            return bpmn
+    override fun remove(child: BpmnElement) {
+        content.remove(child)
+    }
+
+    companion object {
+        fun parse(xml: XmlElement, parent: BpmnElement?): BpmnLaneSet {
+            val laneSet = BpmnLaneSet(xml["id"], parent)
+
+            laneSet.content.addAll(xml.children.map { child ->
+                BpmnLane.parse(child, laneSet)
+            })
+
+            return laneSet
         }
     }
 }

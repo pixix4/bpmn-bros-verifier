@@ -3,16 +3,13 @@ package io.framed.model.bpmn.model
 import io.framed.model.bpmn.xml.XmlElement
 
 class BpmnGateway(
-    override  val id: String
-) : BpmnElement {
+        override val id: String,
+        override var parent: BpmnElement?
+) : BpmnFlowObject {
 
-    companion object : BpmnParser<BpmnGateway>(".*[Gg]ateway".toRegex()) {
-        override fun parse(xml: XmlElement): BpmnGateway {
-            if (!canParse(xml)) throw IllegalArgumentException("Cannot parse BpmnGateway")
+    override val name: String = ""
 
-            val bpmn = BpmnGateway(xml["id"])
-
-            return bpmn
-        }
+    companion object {
+        fun parse(xml: XmlElement, parent: BpmnElement) = BpmnGateway(xml["id"], parent)
     }
 }

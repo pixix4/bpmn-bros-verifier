@@ -3,23 +3,12 @@ package io.framed.model.bpmn.model
 import io.framed.model.bpmn.xml.XmlElement
 
 class BpmnTask(
-    override val id: String
-) : BpmnElement {
+        override val id: String,
+        override val name: String,
+        override var parent: BpmnElement?
+) : BpmnFlowObject {
 
-    var name: String = ""
-
-    override fun stringify(): String {
-        return super.stringify() + "($name)"
-    }
-
-    companion object : BpmnParser<BpmnTask>("(.*[Tt]ask|subProcess)".toRegex()) {
-        override fun parse(xml: XmlElement): BpmnTask {
-            if (!canParse(xml)) throw IllegalArgumentException("Cannot parse BpmnTask")
-
-            val bpmn = BpmnTask(xml["id"])
-            bpmn.name = xml["name"]
-
-            return bpmn
-        }
+    companion object {
+        fun parse(xml: XmlElement, parent: BpmnElement?) = BpmnTask(xml["id"], xml["name"], parent)
     }
 }

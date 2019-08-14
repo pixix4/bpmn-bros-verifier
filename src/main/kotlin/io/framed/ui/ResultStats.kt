@@ -7,9 +7,9 @@ import de.westermann.kwebview.components.boxView
 import io.framed.RenderableData
 import io.framed.framework.verifier.Result
 
-class ResultStats: ViewCollection<View>() {
+class ResultStats : ViewCollection<View>() {
 
-    val data= RenderableData.renderableProperty
+    val data = RenderableData.renderableProperty
 
     init {
         boxView {

@@ -10,12 +10,12 @@ import de.westermann.kwebview.components.h1
 import de.westermann.kwebview.components.textView
 import io.framed.framework.ModelRelation
 import io.framed.framework.matcher.PredefinedMatch
-import io.framed.model.bros.BrosParser
 import io.framed.generateBpmnTree
 import io.framed.generateBrosTree
-import io.framed.model.bpmn.model.BpmnFlow
-import io.framed.model.bpmn.model.transitiveChildren
+import io.framed.model.bpmn.model.BpmnMessageFlow
+import io.framed.model.bpmn.model.BpmnSequenceFlow
 import io.framed.model.bpmn.xml.BpmnParser
+import io.framed.model.bros.BrosParser
 import io.framed.verify
 import org.w3c.dom.SMOOTH
 import org.w3c.dom.ScrollBehavior
@@ -34,7 +34,7 @@ class Application : ViewCollection<View>() {
             transform = { content ->
                 val bpmn = BpmnParser.parse(content) ?: return@FileTextBox null
                 generateBpmnTree(
-                        bpmn.transitiveChildren().filterIsInstance<BpmnFlow>().map { ModelRelation(it, it::class) },
+                        bpmn.allChildren.values.filter { it is BpmnSequenceFlow || it is BpmnMessageFlow }.map { ModelRelation(it, it::class).also { "println ${it.relation.stringify()}" } },
                         bpmn
                 )
             },

@@ -1,31 +1,46 @@
 package io.framed.model.bpmn.model
 
+import io.framed.model.bpmn.BpmnModel
 import io.framed.model.bpmn.xml.XmlElement
 
 class BpmnProcess(
-        override val id: String
-) : BpmnElementGroup {
+        override val id: String,
+        override var parent: BpmnElement?
+) : BpmnElement {
 
-    override val content: MutableList<BpmnElement> = mutableListOf()
+    override var name: String = ""
 
-    var participant: BpmnParticipant? = null
+    val content = mutableListOf<BpmnElement>()
 
-    override fun stringify(): String {
-        return super.stringify() + (participant?.let { "(${it.name})" } ?: "")
+    override fun build(model: BpmnModel) {
+        name = model.participants.firstOrNull { it.id == id }?.name ?: ""
+        for (element in content) {
+            element.build(model)
+        }
     }
 
-    companion object : BpmnParser<BpmnProcess>("process".toRegex()) {
-        override fun parse(xml: XmlElement): BpmnProcess {
-            if (!canParse(xml)) throw IllegalArgumentException("Cannot parse BpmnProcess")
+    override fun getAllChildren(): List<BpmnElement> {
+        return super.getAllChildren() + content.flatMap { it.getAllChildren() }
+    }
 
-            val bpmn = BpmnProcess(xml["id"])
+    override fun remove(child: BpmnElement) {
+        content.remove(child)
+    }
 
-            for (child in xml.children) {
-                val element = BpmnParser.parse(child)
-                bpmn.content += element
-            }
+    companion object {
+        fun parse(xml: XmlElement, parent: BpmnElement?): BpmnProcess {
+            val process = BpmnProcess(xml["id"], parent)
 
-            return bpmn
+            process.content.addAll(xml.children.map { child ->
+                when {
+                    child.tagName.contains("sequenceFlow", true) -> BpmnSequenceFlow.parse(child)
+                    child.tagName.contains("messageFlow", true) -> BpmnMessageFlow.parse(child)
+                    child.tagName.contains("laneSet") -> BpmnLaneSet.parse(child, process)
+                    else -> BpmnFlowObject.parse(child, process)
+                }
+            })
+
+            return process
         }
     }
 }

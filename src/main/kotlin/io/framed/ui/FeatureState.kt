@@ -5,7 +5,6 @@ import org.w3c.dom.get
 import org.w3c.dom.set
 import kotlin.browser.window
 import kotlin.reflect.KMutableProperty0
-import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty0
 
 object FeatureState {

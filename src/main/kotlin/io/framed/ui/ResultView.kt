@@ -16,7 +16,7 @@ import io.framed.model.bros.model.BrosElement
 @Suppress("UNCHECKED_CAST")
 class ResultView : ViewCollection<View>() {
 
-    val data= RenderableData.renderableProperty
+    val data = RenderableData.renderableProperty
 
     init {
         classList.bind("hidden", data.mapBinding { it == null })

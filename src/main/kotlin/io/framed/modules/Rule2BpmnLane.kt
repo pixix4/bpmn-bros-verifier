@@ -11,11 +11,12 @@ fun Context.setupRule2() {
         matchStrings(lane.element.name, role.element.name)
     }
 
-    verifyBpmn<BpmnLane>("Rule 2 - BpmnSwimlane") { bpmn ->
-        for (match in bpmn.matchingElements) {
-            val roleType = match.model<BrosRoleType>() ?: continue
-            return@verifyBpmn Result.match("BpmnLane '${bpmn.element.name}' matches BrosRoleType '${roleType.name}'", bros = match)
+    verifyBpmn<BpmnLane>("Rule 2 - BpmnLane") { bpmn ->
+        for (bros in bpmn.matchingElements) {
+            if (bros.checkType<BrosRoleType>()) {
+                return@verifyBpmn Result.match("$bpmn matches $bros", bros = bros)
+            }
         }
-        Result.error("Cannot find matching bros element for BpmnLane '${bpmn.element.name}'")
+        Result.error("Cannot find matching BrosElement for $bpmn")
     }
 }

@@ -19,7 +19,7 @@ class ResultTab(val name: String, init: ViewCollection<View>.() -> Unit) {
         }
     }
 
-    val content = BoxView().apply{
+    val content = BoxView().apply {
         classList.bind("active", selectedProperty)
 
         init()

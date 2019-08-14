@@ -2,10 +2,10 @@ package io.framed
 
 import de.westermann.kwebview.get
 import io.framed.framework.matcher.PredefinedMatch
+import io.framed.model.bpmn.BpmnModel
+import io.framed.model.bpmn.xml.BpmnParser
 import io.framed.model.bros.BrosDocument
 import io.framed.model.bros.BrosParser
-import io.framed.model.bpmn.model.BpmnModel
-import io.framed.model.bpmn.xml.BpmnParser
 import io.framed.ui.Application
 import kotlin.browser.document
 import kotlin.browser.window

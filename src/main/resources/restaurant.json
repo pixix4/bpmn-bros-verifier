@@ -116,7 +116,7 @@
                             ["io.framed.model.ReturnEvent", {
                                     "id": 78,
                                     "type": "STANDARD",
-                                    "desc": "order canceled"
+                                    "desc": "order cancelled"
                                 }
                             ],
                             ["io.framed.model.RoleType", {
@@ -1199,7 +1199,7 @@
                     },
                     "labels": [
                         {
-                            "text": "order canceled",
+                            "text": "order cancelled",
                             "left": -6,
                             "top": 32,
                             "position": 0,
