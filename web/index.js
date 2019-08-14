@@ -11,5 +11,5 @@ app.use('', express.static(path.join(__dirname, 'website')));
 app.use('/src/main', express.static(path.join(__dirname, '../src/main')));
 
 app.listen(3000, function () {
-    console.log('bros-bpmn-verifier is available on http://localhost:3000!');
+    console.log('bpmn-bros-verifier is available on http://localhost:3000!');
 });
