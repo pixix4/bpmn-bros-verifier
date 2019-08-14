@@ -1,9 +1,9 @@
 package io.framed
 
+import de.westermann.kwebview.get
 import io.framed.framework.matcher.PredefinedMatch
 import io.framed.model.bros.BrosDocument
 import io.framed.model.bros.BrosParser
-import io.framed.framework.util.loadAjaxFile
 import io.framed.model.bpmn.model.BpmnModel
 import io.framed.model.bpmn.xml.BpmnParser
 import io.framed.ui.Application
@@ -47,19 +47,19 @@ fun init() {
         }
     }
 
-    loadAjaxFile("restaurant.json") {
+    get("restaurant.json") {
         bros = BrosParser.parse(it)
         brosContent = it
         check()
     }
 
-    loadAjaxFile("restaurant.bpmn") {
+    get("restaurant.bpmn") {
         bpmn = BpmnParser.parse(it)
         bpmnContent = it
         check()
     }
 
-    loadAjaxFile("match.json") {
+    get("match.json") {
         predefinedMatches = PredefinedMatch.parse(it)
         predefinedMatchesContent = it
         check()

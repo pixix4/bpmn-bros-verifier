@@ -5,8 +5,8 @@ import de.westermann.kobserve.property.mapBinding
 import de.westermann.kobserve.property.property
 import de.westermann.kwebview.View
 import de.westermann.kwebview.ViewCollection
+import de.westermann.kwebview.async
 import de.westermann.kwebview.components.textView
-import io.framed.framework.util.async
 import kotlin.browser.window
 
 class ResultField(
