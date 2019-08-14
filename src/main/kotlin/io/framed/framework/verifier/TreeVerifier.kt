@@ -2,11 +2,11 @@ package io.framed.framework.verifier
 
 import io.framed.framework.ModelTree
 import io.framed.model.bpmn.model.BpmnElement
-import io.framed.model.bros.ModelElement
+import io.framed.model.bros.model.BrosElement
 
 class TreeVerifier(
         private val bpmnTree: ModelTree<BpmnElement>,
-        private val brosTree: ModelTree<ModelElement<*>>
+        private val brosTree: ModelTree<BrosElement>
 ) {
 
     private val verifierList = mutableListOf<Verifier>()
@@ -17,7 +17,7 @@ class TreeVerifier(
 
     fun verify(): List<Result> {
         val bpmnSequence = bpmnTree.asSequence<BpmnElement>().toList()
-        val brosSequence = brosTree.asSequence<ModelElement<*>>().toList()
+        val brosSequence = brosTree.asSequence<BrosElement>().toList()
 
         val results: MutableList<Result> = mutableListOf()
 

@@ -2,12 +2,12 @@ package io.framed.framework.matcher
 
 import io.framed.framework.ModelTree
 import io.framed.model.bpmn.model.BpmnElement
-import io.framed.model.bros.ModelElement
+import io.framed.model.bros.model.BrosElement
 
 
 class TreeMatcher(
         private val bpmnTree: ModelTree<BpmnElement>,
-        private val brosTree: ModelTree<ModelElement<*>>
+        private val brosTree: ModelTree<BrosElement>
 ) {
 
     private val matcherList = mutableListOf<Matcher>()
@@ -18,7 +18,7 @@ class TreeMatcher(
 
     fun match(predefinedMatches: List<PredefinedMatch>): Int? {
         val bpmnSequence = bpmnTree.asSequence<BpmnElement>().toList()
-        val brosSequence = brosTree.asSequence<ModelElement<*>>().toList()
+        val brosSequence = brosTree.asSequence<BrosElement>().toList()
 
         var bpmnState = bpmnSequence.associateWith { it.matchingElements.toSet() }
         var brosState = brosSequence.associateWith { it.matchingElements.toSet() }

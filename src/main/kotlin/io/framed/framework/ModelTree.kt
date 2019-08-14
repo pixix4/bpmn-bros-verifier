@@ -1,7 +1,7 @@
 package io.framed.framework
 
 import io.framed.model.bpmn.model.BpmnElement
-import io.framed.model.bros.ModelElement
+import io.framed.model.bros.model.BrosElement
 import kotlin.reflect.KClass
 
 class ModelTree<out T : Any>(
@@ -64,7 +64,7 @@ class ModelTree<out T : Any>(
 
     override fun toString() = when (element) {
         is BpmnElement -> element.log(false)
-        is ModelElement<*> -> element.stringify()
+        is BrosElement -> element.stringify()
         else -> element.toString()
     }
 

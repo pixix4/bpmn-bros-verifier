@@ -1,30 +1,27 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
  * The model defines an model of the modeling language
  */
 @Serializable
-class Event() : ModelElement<Event>() {
+@SerialName("Event")
+class BrosEvent() : BrosObject() {
 
-    constructor(init: (Event) -> Unit) : this() {
+    constructor(init: (BrosEvent) -> Unit) : this() {
         init(this)
     }
 
     /**
      * Type of the model
      */
-    var type: EventType = EventType.STANDARD
+    var type: BrosEventType = BrosEventType.STANDARD
     /**
      * Description of the BpmnEvent
      */
     var desc: String = ""
 
     override fun stringify() = "${this::class.simpleName}($desc)"
-
-    override fun copy() = Event { new ->
-        new.type = type
-        new.desc = desc
-    }
 }

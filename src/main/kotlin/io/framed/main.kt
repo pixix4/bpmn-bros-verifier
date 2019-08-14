@@ -1,8 +1,8 @@
 package io.framed
 
 import io.framed.framework.matcher.PredefinedMatch
-import io.framed.framework.util.BrosDocument
-import io.framed.framework.util.BrosParser
+import io.framed.model.bros.BrosDocument
+import io.framed.model.bros.BrosParser
 import io.framed.framework.util.loadAjaxFile
 import io.framed.model.bpmn.model.BpmnModel
 import io.framed.model.bpmn.xml.BpmnParser

@@ -8,12 +8,12 @@ import de.westermann.kwebview.components.boxView
 import de.westermann.kwebview.components.iconView
 import io.framed.framework.ModelTree
 import io.framed.model.bpmn.model.BpmnElement
-import io.framed.model.bros.ModelElement
+import io.framed.model.bros.model.BrosElement
 
 class ResultEntry(
         private val type: Type,
         private val bpmn: ModelTree<BpmnElement>?,
-        private val bros: ModelTree<ModelElement<*>>?,
+        private val bros: ModelTree<BrosElement>?,
         private val module: String?,
         private val message: String,
         onDelete: (() -> Unit)? = null

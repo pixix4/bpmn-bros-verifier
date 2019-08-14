@@ -2,13 +2,13 @@ package io.framed.framework.verifier
 
 import io.framed.framework.ModelTree
 import io.framed.model.bpmn.model.BpmnElement
-import io.framed.model.bros.ModelElement
+import io.framed.model.bros.model.BrosElement
 
 @Suppress("DataClassPrivateConstructor", "UNCHECKED_CAST")
 data class Result private constructor(
         val type: Type,
         val bpmn: ModelTree<BpmnElement>?,
-        val bros: ModelTree<ModelElement<*>>?,
+        val bros: ModelTree<BrosElement>?,
         val message: String,
         val verifier: Verifier?
 ) {
@@ -16,7 +16,7 @@ data class Result private constructor(
         fun match(message: String, bpmn: ModelTree<*>? = null, bros: ModelTree<*>? = null) = Result(
                 Type.POSITIVE,
                 bpmn as? ModelTree<BpmnElement>,
-                bros as? ModelTree<ModelElement<*>>,
+                bros as? ModelTree<BrosElement>,
                 message,
                 null
         )
@@ -24,7 +24,7 @@ data class Result private constructor(
         fun error(message: String, bpmn: ModelTree<*>? = null, bros: ModelTree<*>? = null) = Result(
                 Type.NEGATIVE,
                 bpmn as? ModelTree<BpmnElement>,
-                bros as? ModelTree<ModelElement<*>>,
+                bros as? ModelTree<BrosElement>,
                 message,
                 null
         )

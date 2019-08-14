@@ -1,5 +1,6 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -8,9 +9,10 @@ import kotlinx.serialization.Serializable
  * @author Sebastian
  */
 @Serializable
-class DestroyRelationship() : ModelConnection<DestroyRelationship>() {
+@SerialName("DestroyRelationship")
+class BrosDestroyRelation() : BrosConnection() {
 
-    constructor(sourceId: Long, targetId: Long): this() {
+    constructor(sourceId: Long, targetId: Long) : this() {
         this.sourceId = sourceId
         this.targetId = targetId
     }
@@ -21,8 +23,4 @@ class DestroyRelationship() : ModelConnection<DestroyRelationship>() {
     var name: String = ""
 
     override fun stringify() = "${this::class.simpleName}($name)"
-
-    override fun copy() = DestroyRelationship().also { new ->
-        new.name = name
-    }
 }

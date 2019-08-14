@@ -9,9 +9,9 @@ import io.framed.framework.matcher.TreeMatcher
 import io.framed.framework.verifier.Result
 import io.framed.framework.verifier.TreeVerifier
 import io.framed.model.bpmn.model.*
-import io.framed.model.bros.ModelConnection
-import io.framed.model.bros.ModelElement
-import io.framed.model.bros.ModelElementGroup
+import io.framed.model.bros.model.BrosConnection
+import io.framed.model.bros.model.BrosElement
+import io.framed.model.bros.model.BrosObjectGroup
 import io.framed.modules.activeModules
 import io.framed.ui.FeatureState
 
@@ -43,8 +43,8 @@ fun generateBpmnTree(connections: List<ModelRelation<BpmnFlow>>, element: BpmnEl
     return tree
 }
 
-fun generateBrosTree(connections: List<ModelRelation<ModelConnection<*>>>, element: ModelElement<*>): ModelTree<ModelElement<*>> {
-    val children = if (element is ModelElementGroup<*>) {
+fun generateBrosTree(connections: List<ModelRelation<BrosConnection>>, element: BrosElement): ModelTree<BrosElement> {
+    val children = if (element is BrosObjectGroup) {
         element.children.map { generateBrosTree(connections, it) }
     } else emptyList()
 
@@ -72,7 +72,7 @@ fun generateBrosTree(connections: List<ModelRelation<ModelConnection<*>>>, eleme
 
 data class RenderableData(
         val bpmnTree: ModelTree<BpmnElement>,
-        val brosTree: ModelTree<ModelElement<*>>,
+        val brosTree: ModelTree<BrosElement>,
         val predefinedMatches: List<PredefinedMatch>,
         val results: List<Result>,
         val matchRounds: Int? = null
@@ -91,7 +91,7 @@ data class RenderableData(
 @Suppress("UnsafeCastFromDynamic")
 fun verify(
         bpmnTree: ModelTree<BpmnElement>,
-        brosTree: ModelTree<ModelElement<*>>,
+        brosTree: ModelTree<BrosElement>,
         predefinedMatches: List<PredefinedMatch>
 ) {
     for (element in bpmnTree.asSequence()) {
@@ -131,10 +131,10 @@ fun verify(
 }
 
 @Suppress("UNCHECKED_CAST")
-fun ModelTree<BpmnElement>.containerName(): Pair<String, ModelTree<BpmnElement>>? {
+fun ModelTree<BpmnElement>.container(): ContainerData? {
     return when (val model = this.element) {
         is BpmnLane -> {
-            model.name to this
+            ContainerData(model.name, this)
         }
         is BpmnProcess -> {
             parent?.let { parent ->
@@ -147,10 +147,15 @@ fun ModelTree<BpmnElement>.containerName(): Pair<String, ModelTree<BpmnElement>>
                                     .filterIsInstance<BpmnParticipant>()
                                     .firstOrNull { it.processRef == model.id }
                                     ?.name
-                                    ?.let { it to this }
+                                    ?.let { ContainerData(it, this) }
                         }
             }
         }
-        else -> parent?.let { (it as ModelTree<BpmnElement>).containerName() }
+        else -> parent?.let { (it as ModelTree<BpmnElement>).container() }
     }
 }
+
+data class ContainerData(
+        val name: String,
+        val element: ModelTree<BpmnElement>
+)

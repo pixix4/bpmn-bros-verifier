@@ -11,7 +11,7 @@ import io.framed.framework.ModelTree
 import io.framed.framework.matcher.PredefinedMatch
 import io.framed.framework.verifier.Result
 import io.framed.model.bpmn.model.BpmnElement
-import io.framed.model.bros.ModelElement
+import io.framed.model.bros.model.BrosElement
 
 @Suppress("UNCHECKED_CAST")
 class ResultView : ViewCollection<View>() {
@@ -61,7 +61,7 @@ class ResultView : ViewCollection<View>() {
                                 +ResultEntry(
                                         ResultEntry.Type.INFO,
                                         element,
-                                        r as ModelTree<ModelElement<*>>,
+                                        r as ModelTree<BrosElement>,
                                         modules.joinToString(", "),
                                         "Found name match"
                                 ).render(this)

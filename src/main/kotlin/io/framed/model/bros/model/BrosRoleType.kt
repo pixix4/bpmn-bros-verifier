@@ -1,6 +1,7 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
-import io.framed.framework.util.PolymorphicListSerializer
+import io.framed.model.bros.PolymorphicListSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -9,9 +10,10 @@ import kotlinx.serialization.Serializable
  * @author lars
  */
 @Serializable
-class RoleType() : ModelElement<RoleType>() {
+@SerialName("RoleType")
+class BrosRoleType() : BrosObject() {
 
-    constructor(init: (RoleType) -> Unit) : this() {
+    constructor(init: (BrosRoleType) -> Unit) : this() {
         init(this)
     }
 
@@ -24,13 +26,13 @@ class RoleType() : ModelElement<RoleType>() {
      * List of roleType attributes
      */
     @Serializable(with = PolymorphicListSerializer::class)
-    var attributes: List<Attribute> = emptyList()
+    var attributes: List<BrosAttribute> = emptyList()
 
     /**
      * List of roleType methods
      */
     @Serializable(with = PolymorphicListSerializer::class)
-    var methods: List<Method> = emptyList()
+    var methods: List<BrosMethod> = emptyList()
 
     override fun maxId(): Long = listOf(
             id,
@@ -39,10 +41,4 @@ class RoleType() : ModelElement<RoleType>() {
     ).max() ?: id
 
     override fun stringify() = "${this::class.simpleName}($name)"
-
-    override fun copy() = RoleType { new ->
-        new.name = name
-        new.attributes = attributes.map { it.copy() }
-        new.methods = methods.map { it.copy() }
-    }
 }

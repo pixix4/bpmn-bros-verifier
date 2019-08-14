@@ -10,7 +10,7 @@ import de.westermann.kwebview.components.h1
 import de.westermann.kwebview.components.textView
 import io.framed.framework.ModelRelation
 import io.framed.framework.matcher.PredefinedMatch
-import io.framed.framework.util.BrosParser
+import io.framed.model.bros.BrosParser
 import io.framed.generateBpmnTree
 import io.framed.generateBrosTree
 import io.framed.model.bpmn.model.BpmnFlow

@@ -1,5 +1,6 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -8,9 +9,10 @@ import kotlinx.serialization.Serializable
  * @author lars
  */
 @Serializable
-class Attribute() : ModelElement<Attribute>() {
+@SerialName("Attribute")
+class BrosAttribute() : BrosElement() {
 
-    constructor(init: (Attribute) -> Unit) : this() {
+    constructor(init: (BrosAttribute) -> Unit) : this() {
         init(this)
     }
 
@@ -25,9 +27,4 @@ class Attribute() : ModelElement<Attribute>() {
     var type: String = ""
 
     override fun stringify() = "${this::class.simpleName}($name:$type)"
-
-    override fun copy() = Attribute { new ->
-        new.name = name
-        new.type = type
-    }
 }

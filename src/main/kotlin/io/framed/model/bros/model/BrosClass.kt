@@ -1,6 +1,7 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
-import io.framed.framework.util.PolymorphicListSerializer
+import io.framed.model.bros.PolymorphicListSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -9,9 +10,10 @@ import kotlinx.serialization.Serializable
  * @author lars
  */
 @Serializable
-class Class() : ModelElement<Class>() {
+@SerialName("Class")
+class BrosClass() : BrosObject() {
 
-    constructor(init: (Class) -> Unit) : this() {
+    constructor(init: (BrosClass) -> Unit) : this() {
         init(this)
     }
 
@@ -24,17 +26,13 @@ class Class() : ModelElement<Class>() {
      * List of class attributes
      */
     @Serializable(with = PolymorphicListSerializer::class)
-    var attributes: List<Attribute> = emptyList()
+    var attributes: List<BrosAttribute> = emptyList()
 
     /**
      * List of class methods
      */
     @Serializable(with = PolymorphicListSerializer::class)
-    var methods: List<Method> = emptyList()
-
-    override fun getAllChildren(): List<ModelElement<*>> {
-        return super.getAllChildren() + attributes.flatMap { it.getAllChildren() } + methods.flatMap { it.getAllChildren() }
-    }
+    var methods: List<BrosMethod> = emptyList()
 
     override fun maxId(): Long = listOf(
             id,
@@ -43,10 +41,4 @@ class Class() : ModelElement<Class>() {
     ).max() ?: id
 
     override fun stringify() = "${this::class.simpleName}($name)"
-
-    override fun copy() = Class { new ->
-        new.name = name
-        new.attributes = attributes.map { it.copy() }
-        new.methods = methods.map { it.copy() }
-    }
 }

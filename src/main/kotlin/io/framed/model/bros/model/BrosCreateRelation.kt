@@ -1,16 +1,18 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Model class for an uml connection.
+ * Model class for an BROS create relation
  *
- * @author lars
+ * @author Sebastian
  */
 @Serializable
-class Fulfillment() : ModelConnection<Fulfillment>() {
+@SerialName("CreateRelationship")
+class BrosCreateRelation() : BrosConnection() {
 
-    constructor(sourceId: Long, targetId: Long): this() {
+    constructor(sourceId: Long, targetId: Long) : this() {
         this.sourceId = sourceId
         this.targetId = targetId
     }
@@ -21,8 +23,4 @@ class Fulfillment() : ModelConnection<Fulfillment>() {
     var name: String = ""
 
     override fun stringify() = "${this::class.simpleName}($name)"
-
-    override fun copy() = Fulfillment().also { new ->
-        new.name = name
-    }
 }

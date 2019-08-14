@@ -17,7 +17,7 @@ data class PredefinedMatch(
     companion object {
         fun parse(data: String): List<PredefinedMatch> {
             @Suppress("EXPERIMENTAL_API_USAGE")
-            return Json.nonstrict.parse(serializer().list, data).foldRight(emptyList<PredefinedMatch>()) { predefinedMatch, acc ->
+            return Json.nonstrict.parse(serializer().list, data).foldRight(emptyList()) { predefinedMatch, acc ->
                 if (acc.firstOrNull { it.bpmn == predefinedMatch.bpmn && it.bros == predefinedMatch.bros } == null) {
                     listOf(predefinedMatch) + acc
                 } else {
@@ -28,7 +28,7 @@ data class PredefinedMatch(
 
         fun stringify(list: List<PredefinedMatch>): String {
             @Suppress("EXPERIMENTAL_API_USAGE")
-            return Json.indented.stringify(serializer().list, list.foldRight(emptyList<PredefinedMatch>()) { predefinedMatch, acc ->
+            return Json.indented.stringify(serializer().list, list.foldRight(emptyList()) { predefinedMatch, acc ->
                 if (acc.firstOrNull { it.bpmn == predefinedMatch.bpmn && it.bros == predefinedMatch.bros } == null) {
                     listOf(predefinedMatch) + acc
                 } else {

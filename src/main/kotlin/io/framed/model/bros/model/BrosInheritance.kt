@@ -1,5 +1,6 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -8,9 +9,10 @@ import kotlinx.serialization.Serializable
  * @author lars
  */
 @Serializable
-class Inheritance() : ModelConnection<Inheritance>(){
+@SerialName("Inheritance")
+class BrosInheritance() : BrosConnection() {
 
-    constructor(sourceId: Long, targetId: Long): this() {
+    constructor(sourceId: Long, targetId: Long) : this() {
         this.sourceId = sourceId
         this.targetId = targetId
     }
@@ -31,12 +33,4 @@ class Inheritance() : ModelConnection<Inheritance>(){
     var targetCardinality: String = ""
 
     override fun stringify() = "${this::class.simpleName}($name)"
-
-    override fun copy() = Inheritance().also { new ->
-        new.sourceId = sourceId
-        new.targetId = targetId
-        new.name = name
-        new.sourceCardinality = sourceCardinality
-        new.targetCardinality = targetCardinality
-    }
 }

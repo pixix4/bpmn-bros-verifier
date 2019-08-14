@@ -30,7 +30,7 @@ class FileTextBox<T : Any>(
         val m = model
         m?.let(count)?.let {
             if (it == 1) "Found 1 element" else "Found $it elements"
-        } ?: "Given file is not valid"
+        } ?: if (content.isBlank()) "" else "Given file is not valid"
     }
 
     fun testTransform(value: String) = saveTransform(value) != null

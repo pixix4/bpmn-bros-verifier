@@ -1,9 +1,9 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
 /**
  * The enum defines the model and their specifications
  */
-enum class EventType(val printableName: String) {
+enum class BrosEventType(val printableName: String) {
     TIMER("Timer"),
     MESSAGE("Message"),
     ERROR("Error"),

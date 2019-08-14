@@ -1,7 +1,6 @@
-package io.framed.framework.util
+package io.framed.model.bros
 
-import io.framed.model.bros.Connections
-import io.framed.model.bros.Package
+import io.framed.model.bros.model.BrosPackage
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlin.math.max
@@ -9,7 +8,7 @@ import kotlin.math.max
 @Serializable
 class BrosDocument(
         @Serializable(with = PolymorphicSerializer::class)
-        val root: Package,
+        val root: BrosPackage,
         val connections: Connections
 ) {
 

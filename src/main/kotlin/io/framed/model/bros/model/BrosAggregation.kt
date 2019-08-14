@@ -1,5 +1,6 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -8,9 +9,10 @@ import kotlinx.serialization.Serializable
  * @author lars
  */
 @Serializable
-class Composition() : ModelConnection<Composition>() {
+@SerialName("Aggregation")
+class BrosAggregation() : BrosConnection() {
 
-    constructor(sourceId: Long, targetId: Long): this() {
+    constructor(sourceId: Long, targetId: Long) : this() {
         this.sourceId = sourceId
         this.targetId = targetId
     }
@@ -30,12 +32,5 @@ class Composition() : ModelConnection<Composition>() {
      */
     var targetCardinality: String = "*"
 
-
     override fun stringify() = "${this::class.simpleName}($name)"
-
-    override fun copy() = Composition().also { new ->
-        new.name = name
-        new.sourceCardinality = sourceCardinality
-        new.targetCardinality = targetCardinality
-    }
 }

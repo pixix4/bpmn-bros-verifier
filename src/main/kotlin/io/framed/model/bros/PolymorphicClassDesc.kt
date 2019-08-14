@@ -1,4 +1,4 @@
-package io.framed.framework.util
+package io.framed.model.bros
 
 import kotlinx.serialization.SerialKind
 import kotlinx.serialization.UnionKind

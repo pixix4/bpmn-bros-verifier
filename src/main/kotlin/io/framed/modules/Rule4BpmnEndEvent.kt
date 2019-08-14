@@ -1,14 +1,14 @@
 package io.framed.modules
 
-import io.framed.containerName
+import io.framed.container
 import io.framed.framework.Context
 import io.framed.framework.ModelTree
 import io.framed.framework.verifier.Result
 import io.framed.model.bpmn.model.BpmnEvent
-import io.framed.model.bros.DestroyRelationship
-import io.framed.model.bros.Event
-import io.framed.model.bros.ModelElement
-import io.framed.model.bros.ReturnEvent
+import io.framed.model.bros.model.BrosDestroyRelation
+import io.framed.model.bros.model.BrosEvent
+import io.framed.model.bros.model.BrosElement
+import io.framed.model.bros.model.BrosReturnEvent
 
 @Suppress("UNCHECKED_CAST")
 fun Context.setupRule4() {
@@ -20,24 +20,24 @@ fun Context.setupRule4() {
         if (bpmn.element.terminationEvent || bpmn.element.type != BpmnEvent.Type.END) return@verifyBpmn null
 
         for (match in bpmn.matchingElements) {
-            val event = match.model<Event>()
+            val event = match.model<BrosEvent>()
             if (event != null) {
-                val container = bpmn.containerName()
-                val destroysName = match.relations<DestroyRelationship>().firstOrNull()?.target as? ModelTree<ModelElement<*>>
-                if (container != null && destroysName != null && destroysName in container.second.matchingElements) {
-                    return@verifyBpmn Result.match("BpmnEndEvent '${bpmn.element.name}' matches Event '${event.desc}' and they destroy '${container.first}'", bros = match)
+                val container = bpmn.container()
+                val destroysName = match.relations<BrosDestroyRelation>().firstOrNull()?.target as? ModelTree<BrosElement>
+                if (container != null && destroysName != null && destroysName in container.element.matchingElements) {
+                    return@verifyBpmn Result.match("BpmnEndEvent '${bpmn.element.name}' matches BrosEvent '${event.desc}' and they destroy '${container.name}'", bros = match)
                 } else {
-                    return@verifyBpmn Result.error("BpmnEndEvent '${bpmn.element.name}' matches Event '${event.desc}' but they destroy different container (${container?.second} | $destroysName)", bros = match)
+                    return@verifyBpmn Result.error("BpmnEndEvent '${bpmn.element.name}' matches BrosEvent '${event.desc}' but they destroy different container (${container?.element} | $destroysName)", bros = match)
                 }
             }
-            val returnEvent = match.model<ReturnEvent>()
+            val returnEvent = match.model<BrosReturnEvent>()
             if (returnEvent != null) {
-                val container = bpmn.containerName()
+                val container = bpmn.container()
                 val destroysName = match.parent
-                if (container != null && destroysName != null && destroysName in container.second.matchingElements) {
-                    return@verifyBpmn Result.match("BpmnEndEvent '${bpmn.element.name}' matches Event '${returnEvent.desc}' and they destroy '${container.first}'", bros = match)
+                if (container != null && destroysName != null && destroysName in container.element.matchingElements) {
+                    return@verifyBpmn Result.match("BpmnEndEvent '${bpmn.element.name}' matches BrosEvent '${returnEvent.desc}' and they destroy '${container.name}'", bros = match)
                 } else {
-                    return@verifyBpmn Result.error("BpmnEndEvent '${bpmn.element.name}' matches Event '${returnEvent.desc}' but they destroy different container (${container?.second} | $destroysName)", bros = match)
+                    return@verifyBpmn Result.error("BpmnEndEvent '${bpmn.element.name}' matches BrosEvent '${returnEvent.desc}' but they destroy different container (${container?.element} | $destroysName)", bros = match)
                 }
             }
         }

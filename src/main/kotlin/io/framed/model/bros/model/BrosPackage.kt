@@ -1,6 +1,7 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
-import io.framed.framework.util.PolymorphicSetSerializer
+import io.framed.model.bros.PolymorphicSetSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -9,9 +10,10 @@ import kotlinx.serialization.Serializable
  * It contains classes, connections, role types and nested packages.
  */
 @Serializable
-class Package() : ModelElementMetadata<Package>() {
+@SerialName("Package")
+class BrosPackage() : BrosObjectGroup() {
 
-    constructor(init: (Package) -> Unit) : this() {
+    constructor(init: (BrosPackage) -> Unit) : this() {
         init(this)
     }
 
@@ -21,11 +23,7 @@ class Package() : ModelElementMetadata<Package>() {
     var name: String = "UnnamedPackage"
 
     @Serializable(with = PolymorphicSetSerializer::class)
-    override var children: Set<ModelElement<*>> = emptySet()
-
-    override fun getAllChildren(): List<ModelElement<*>> {
-        return super.getAllChildren() + children.flatMap { it.getAllChildren() }
-    }
+    override var children: Set<BrosObject> = emptySet()
 
     override fun maxId(): Long = listOf(
             id,
@@ -34,8 +32,4 @@ class Package() : ModelElementMetadata<Package>() {
 
     override fun stringify() = "${this::class.simpleName}($name)"
 
-    override fun copy(): Package = Package { new ->
-        new.name = name
-        new.children = children.map { it.copy() }.toSet()
-    }
 }

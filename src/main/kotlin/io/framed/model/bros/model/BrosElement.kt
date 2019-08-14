@@ -1,4 +1,4 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
 import kotlinx.serialization.Serializable
 
@@ -8,12 +8,10 @@ import kotlinx.serialization.Serializable
  * @author lars
  */
 @Serializable
-abstract class ModelElement<M : ModelElement<M>> {
+abstract class BrosElement {
 
     val id: Long = lastId++
 
-    abstract fun copy(): M
-    open fun getAllChildren(): List<ModelElement<*>> = listOf(this)
     open fun maxId(): Long = id
 
     abstract fun stringify(): String

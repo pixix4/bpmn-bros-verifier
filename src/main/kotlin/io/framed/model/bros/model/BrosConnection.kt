@@ -1,10 +1,9 @@
-package io.framed.model.bros
+package io.framed.model.bros.model
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-abstract class ModelConnection<M : ModelConnection<M>>() : ModelElement<M>() {
-
+abstract class BrosConnection : BrosElement() {
     var sourceId: Long = id
     var targetId: Long = id
 }

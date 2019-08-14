@@ -6,33 +6,33 @@ import io.framed.framework.verifier.Result
 import io.framed.model.bpmn.model.BpmnEvent
 import io.framed.model.bpmn.model.BpmnFlow
 import io.framed.model.bpmn.model.BpmnGateway
-import io.framed.model.bros.Event
-import io.framed.model.bros.ReturnEvent
+import io.framed.model.bros.model.BrosEvent
+import io.framed.model.bros.model.BrosReturnEvent
 
 fun Context.setupRule3() {
 
-    match<BpmnEvent, Event>("DefaultEventMatcher") { bpmn, bros ->
+    match<BpmnEvent, BrosEvent>("DefaultEventMatcher") { bpmn, bros ->
         matchStrings(bpmn.element.name, bros.element.desc) &&
                 !bpmn.element.terminationEvent
     }
-    match<BpmnEvent, ReturnEvent>("ReturnEventMatcher") { bpmn, bros ->
+    match<BpmnEvent, BrosReturnEvent>("ReturnEventMatcher") { bpmn, bros ->
         matchStrings(bpmn.element.name, bros.element.desc)
     }
-    match<BpmnGateway, Event> { bpmn, bros ->
+    match<BpmnGateway, BrosEvent> { bpmn, bros ->
         bpmn.relations<BpmnFlow>().any { flow ->
             flow.relation.type == BpmnFlow.Type.SEQUENCE &&
                     flow.relation.name.isNotBlank() &&
                     matchStrings(flow.relation.name, bros.element.desc)
         }
     }
-    match<BpmnGateway, ReturnEvent> { bpmn, bros ->
+    match<BpmnGateway, BrosReturnEvent> { bpmn, bros ->
         bpmn.relations<BpmnFlow>().any { flow ->
             flow.relation.type == BpmnFlow.Type.SEQUENCE &&
                     flow.relation.name.isNotBlank() &&
                     matchStrings(flow.relation.name, bros.element.desc)
         }
     }
-    match<BpmnEvent, Event> { bpmn, bros ->
+    match<BpmnEvent, BrosEvent> { bpmn, bros ->
         bpmn.relations<BpmnFlow>().any { flow ->
             flow.relation.type == BpmnFlow.Type.MESSAGE &&
                     flow.source in bros.matchingElements ||
@@ -40,7 +40,7 @@ fun Context.setupRule3() {
 
         }
     }
-    match<BpmnEvent, ReturnEvent> { bpmn, bros ->
+    match<BpmnEvent, BrosReturnEvent> { bpmn, bros ->
         bpmn.relations<BpmnFlow>().any { flow ->
             flow.relation.type == BpmnFlow.Type.MESSAGE &&
                     flow.source in bros.matchingElements ||
@@ -56,8 +56,8 @@ fun Context.setupRule3() {
         if (!bpmn.element.terminationEvent) return@verifyBpmn null
 
         for (match in bpmn.matchingElements) {
-            val returnEvent = match.model<ReturnEvent>() ?: continue
-            return@verifyBpmn Result.match("BpmnTerminationEvent '${bpmn.element.name}' matches ReturnEvent '${returnEvent.desc}'", bros = match)
+            val returnEvent = match.model<BrosReturnEvent>() ?: continue
+            return@verifyBpmn Result.match("BpmnTerminationEvent '${bpmn.element.name}' matches BrosReturnEvent '${returnEvent.desc}'", bros = match)
         }
         Result.error("Cannot find matching bros element for BpmnTerminationEvent '${bpmn.element.name}'")
     }
