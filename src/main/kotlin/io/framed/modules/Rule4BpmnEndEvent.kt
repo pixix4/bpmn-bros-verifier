@@ -41,26 +41,22 @@ fun Context.setupRule4() {
 
         for (bros in bpmn.matchingElements) {
             if (bros.checkType<BrosEvent>()) {
-                val bpmnParents = bpmn.transitiveParent()
+                val bpmnParents = bpmn.transitiveParent<BpmnElement>()
                 val brosDestroy = bros.relations<BrosDestroyRelation>().firstOrNull()?.target as? ModelTree<BrosElement>
 
-                for (bpmnParentAny in bpmnParents) {
-                    val bpmnParent = bpmnParentAny as? ModelTree<BpmnElement>
-
-                    if (bpmnParent != null && brosDestroy != null && brosDestroy in bpmnParent.matchingElements) {
+                for (bpmnParent in bpmnParents) {
+                    if (brosDestroy != null && brosDestroy in bpmnParent.matchingElements) {
                         return@verifyBpmn Result.match("$bpmn matches $bros and they destroy '$bpmnParent'", bros = bros)
                     }
                 }
                 return@verifyBpmn Result.error(message = "$bpmn matches $bros but they destroy different container (${bpmnParents.joinToString { it.toString() }} | $brosDestroy)", bros = bros)
             }
             if (bros.checkType<BrosReturnEvent>()) {
-                val bpmnParents = bpmn.transitiveParent()
+                val bpmnParents = bpmn.transitiveParent<BpmnElement>()
                 val brosParent = bros.parent as? ModelTree<BrosElement>
 
-                for (bpmnParentAny in bpmnParents) {
-                    val bpmnParent = bpmnParentAny as? ModelTree<BpmnElement>
-
-                    if (bpmnParent != null && brosParent != null && brosParent in bpmnParent.matchingElements) {
+                for (bpmnParent in bpmnParents) {
+                    if (brosParent != null && brosParent in bpmnParent.matchingElements) {
                         return@verifyBpmn Result.match("$bpmn matches $bros and they destroy '$bpmnParent'", bros = bros)
                     }
                 }

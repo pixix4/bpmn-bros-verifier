@@ -54,6 +54,15 @@ class ModelTree<out T : Any>(
 
     fun asSequence() = asSequence<T>()
 
+    inline fun <reified M: Any> parent(): ModelTree<M>? {
+        val p = parent ?: return null
+        if (p.element is M) {
+            @Suppress("UNCHECKED_CAST")
+            return p as ModelTree<M>
+        }
+        return null
+    }
+
     fun log(): dynamic {
         val current = "<${element::class.simpleName}> $element"
         val child = children.map(ModelTree<*>::log).toTypedArray()
@@ -84,11 +93,11 @@ class ModelTree<out T : Any>(
     }
 }
 
-fun ModelTree<*>.transitiveParent(): List<ModelTree<*>> {
+inline fun <reified T: Any> ModelTree<*>.transitiveParent(): List<ModelTree<T>> {
     var element = this
-    val parents = mutableListOf<ModelTree<*>>()
+    val parents = mutableListOf<ModelTree<T>>()
     while (element.parent != null) {
-        val p = element.parent ?: return parents
+        val p = element.parent<T>() ?: break
         parents += p
         element = p
     }

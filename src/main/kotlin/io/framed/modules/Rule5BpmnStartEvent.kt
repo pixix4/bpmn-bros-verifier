@@ -20,16 +20,14 @@ fun Context.setupRule5() {
     verifyBpmn<BpmnStartEvent>("Rule 5 - BpmnStartEvent") { bpmn ->
         for (bros in bpmn.matchingElements) {
             if (bros.checkType<BrosEvent>()) {
-                val bpmnParents = bpmn.transitiveParent()
+                val bpmnParents = bpmn.transitiveParent<BpmnElement>()
                 val brosCreate = bros.relations<BrosCreateRelation>()
                         .firstOrNull()
                         ?.source as? ModelTree<BrosElement>
 
 
-                for (bpmnParentAny in bpmnParents) {
-                    val bpmnParent = bpmnParentAny as? ModelTree<BpmnElement>
-
-                    if (bpmnParent != null && brosCreate != null && brosCreate in bpmnParent.matchingElements) {
+                for (bpmnParent in bpmnParents) {
+                    if (brosCreate != null && brosCreate in bpmnParent.matchingElements) {
                         return@verifyBpmn Result.match("$bpmn matches $bros and they create $bpmnParent", bros = bros)
                     }
                 }
