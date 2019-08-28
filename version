@@ -1,0 +1,5 @@
+99095e08c03 - dirty
+Wed Aug 28 16:26:18 2019 +0200
+Add noscript tag
+delete mode 100644 src/main/resources/pizza.svg
+delete mode 100644 src/main/resources/restaurant.png
