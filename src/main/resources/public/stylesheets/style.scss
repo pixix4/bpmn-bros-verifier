@@ -664,3 +664,14 @@ select {
     display: none;
   }
 }
+
+noscript, .noscript {
+  position: absolute;
+  line-height: 2rem;
+  font-size: 2rem;
+  top: 50%;
+  margin-top: -2rem;
+  left: 0;
+  width: 100%;
+  text-align: center;
+}
